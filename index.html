@@ -8,7 +8,6 @@
         :root {
             --neon-blue: #00d4ff;
             --neon-pink: #ff00ff;
-            --neon-green: #00ff41;
             --dark-bg: #050508;
         }
 
@@ -17,15 +16,14 @@
             padding: 0;
             background: var(--dark-bg);
             color: white;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        /* Efecto de líneas de escaneo estilo retro-arcade */
+        /* Efecto de líneas de escaneo arcade */
         body::before {
             content: " ";
             display: block;
@@ -41,10 +39,9 @@
         .header {
             margin-top: 40px;
             text-align: center;
-            animation: flicker 2s infinite;
         }
 
-        /* Contenedor del Logo */
+        /* Ajuste del Logo */
         .logo-img {
             max-width: 280px;
             height: auto;
@@ -74,28 +71,14 @@
 
         .cyber-card {
             position: relative;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid var(--neon-blue);
+            background: rgba(10, 10, 15, 0.9);
+            border: 2px solid var(--neon-blue);
             padding: 30px;
             text-decoration: none;
             color: white;
             text-align: center;
             transition: 0.4s;
-            overflow: hidden;
             clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
-        }
-
-        .cyber-card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.4), transparent);
-            transition: 0.5s;
-        }
-
-        .cyber-card:hover::before {
-            left: 100%;
         }
 
         .cyber-card:hover {
@@ -103,26 +86,29 @@
             background: var(--neon-blue);
             color: black;
             box-shadow: 0 0 30px var(--neon-blue);
-            border-color: white;
         }
 
         .cyber-card h2 {
             margin: 0;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             text-transform: uppercase;
-            font-family: 'Courier New', Courier, monospace;
         }
 
         .cyber-card span {
             font-size: 0.7rem;
             letter-spacing: 2px;
             opacity: 0.8;
+            display: block;
+            margin-bottom: 5px;
         }
 
-        /* Animación de parpadeo para el logo */
-        @keyframes flicker {
-            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
-            20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.4; }
+        .pink-btn {
+            border-color: var(--neon-pink);
+        }
+
+        .pink-btn:hover {
+            background: var(--neon-pink);
+            box-shadow: 0 0 30px var(--neon-pink);
         }
 
         .footer {
@@ -137,23 +123,23 @@
 <body>
 
     <div class="header">
-        <img src="IMG_20260505_123303.jpg" alt="CYT Logo" class="logo-img">
+        <img src="IMG_20260505_123303.png" alt="CYT Logo" class="logo-img">
         <h1>Mission Select</h1>
     </div>
 
     <div class="menu-container">
         <a href="Arcade-Modal-Space/index.html" class="cyber-card">
             <span>MODAL VERBS DEFENSE</span>
-            <h2>MISSION: SPACE ARCADE</h2>
+            <h2>MISSION 01: SPACE ARCADE</h2>
         </a>
 
-        <a href="Grammar%20snake/index.html" class="cyber-card" style="border-color: var(--neon-pink);">
+        <a href="Grammar%20snake/index.html" class="cyber-card pink-btn">
             <span>SENTENCE STRUCTURE</span>
-            <h2 style="text-shadow: 0 0 5px var(--neon-pink);">MISSION: GRAMMAR SNAKE</h2>
+            <h2>MISSION 02: GRAMMAR SNAKE</h2>
         </a>
     </div>
 
-    <div class="footer">UDLA - TRADUCCIÓN E INTERPRETACIÓN 2026</div>
+    <div class="footer">CYT ARCADE • UDLA 2026</div>
 
 </body>
 </html>
