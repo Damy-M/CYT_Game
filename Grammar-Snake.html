@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>SNAKE PROTOCOL 2026</title>
+    <title>SNAKE PROTOCOL - NO WALLS</title>
     <style>
         body { margin: 0; background: #000; color: #00ff41; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; }
         .hud { display: flex; justify-content: space-around; padding: 10px; background: #050505; border-bottom: 2px solid #ff00ff; }
-        #game-box { position: relative; width: 100vw; height: 60vh; background: #020202; border: 1px solid #333; }
+        #game-box { position: relative; width: 100vw; height: 58vh; background: #020202; border: 3px solid #444; box-sizing: border-box; }
         .snake { position: absolute; width: 18px; height: 18px; border-radius: 2px; background: #fff; box-shadow: 0 0 10px #00ff41; z-index: 20; }
-        .food { position: absolute; padding: 8px; border: 1px solid #ff00ff; background: #000; color: #fff; font-size: 0.9rem; z-index: 10; box-shadow: 0 0 5px #ff00ff; }
+        .food { position: absolute; padding: 8px; border: 1px solid #ff00ff; background: #000; color: #fff; font-size: 0.8rem; z-index: 10; box-shadow: 0 0 5px #ff00ff; font-weight: bold; }
         .ctrls { position: absolute; bottom: 5px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; }
         .btn-grid { display: grid; grid-template-areas: ". u ." "l . r" ". d ."; gap: 5px; }
-        .btn { width: 50px; height: 50px; border: 2px solid #00d4ff; background: transparent; color: #00d4ff; border-radius: 50%; font-weight: bold; }
+        .btn { width: 48px; height: 48px; border: 2px solid #00d4ff; background: transparent; color: #00d4ff; border-radius: 50%; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="hud">
         <div>SCORE: <span id="score">0</span></div>
-        <div id="m-text">INITIATING...</div>
+        <div id="m-text">SNAKE SYSTEM READY</div>
         <div>LIVES: <span id="lives">7</span></div>
     </div>
     <div id="game-box"></div>
@@ -29,7 +29,7 @@
             <button class="btn" style="grid-area:r" onclick="move(20,0)">▶</button>
             <button class="btn" style="grid-area:d" onclick="move(0,20)">▼</button>
         </div>
-        <div style="align-self:center; color:#ff00ff">SNAKE PROTOCOL v1.0</div>
+        <div style="align-self:center; color:#ff00ff; font-size: 0.8rem;">PURE MODALS ONLY</div>
     </div>
 
     <audio id="s_bg" src="snake_bg.mp3" loop></audio>
@@ -38,32 +38,37 @@
     <audio id="s_die" src="snake_die.mp3"></audio>
 
     <script>
-        const fullMissions = [
-            { w: "AM", f: ["DO", "HAVE", "IS", "WAS"], s: "I ___ STUDYING" },
-            { w: "CAN", f: ["ARE", "DOES", "BEEN", "HAS"], s: "YOU ___ RUN" }
-            // Añade aquí hasta 60 oraciones siguiendo este formato
+        const pureMissions = [
+            { w: "MUST", f: ["DO", "ARE", "AM"], s: "YOU ___ STOP!" },
+            { w: "CAN", f: ["IS", "WAS", "BEEN"], s: "I ___ SPEAK ENGLISH" },
+            { w: "SHOULD", f: ["SHALL", "WILL", "DO"], s: "YOU ___ STUDY HARD" },
+            { w: "MIGHT", f: ["MUST", "CAN", "DID"], s: "IT ___ RAIN TODAY" },
+            { w: "MAY", f: ["AM", "DOES", "ARE"], s: "___ I GO OUT?" },
+            { w: "COULD", f: ["WILL", "SHALL", "DO"], s: "THEY ___ RUN FAST" },
+            { w: "WILL", f: ["AM", "WAS", "DID"], s: "I ___ HELP YOU" },
+            { w: "MUSTN'T", f: ["MAY", "CAN", "SHALL"], s: "YOU ___ SMOKE HERE" },
+            { w: "CAN'T", f: ["WON'T", "DON'T", "MUST"], s: "I ___ HEAR YOU" },
+            { w: "SHALL", f: ["COULD", "SHOULD", "MIGHT"], s: "___ WE START?" }
         ];
 
         let snake = [{x: 100, y: 100}, {x: 80, y: 100}], dir = {x: 0, y: 0}, score = 0, lives = 7, rd = 0, audio = false;
         const box = document.getElementById("game-box");
-        let activeM = {};
 
         function spawn() {
             document.querySelectorAll(".food").forEach(f => f.remove());
-            activeM = fullMissions[rd];
-            document.getElementById("m-text").innerText = activeM.s;
-            const opts = [activeM.w, ...activeM.f].sort(() => 0.5 - Math.random());
+            const cur = pureMissions[rd];
+            document.getElementById("m-text").innerText = cur.s;
+            const opts = [cur.w, ...cur.f].sort(() => 0.5 - Math.random());
             opts.forEach(txt => {
                 const f = document.createElement("div"); f.className = "food"; f.innerText = txt;
-                // SPAWN SEGURO: Evita el área cerca de la cabeza (radio 100px)
                 let x, y, dist;
                 do {
                     x = Math.random() * (window.innerWidth - 80);
                     y = Math.random() * (box.clientHeight - 40);
                     dist = Math.sqrt(Math.pow(x - snake[0].x, 2) + Math.pow(y - snake[0].y, 2));
-                } while(dist < 120);
+                } while(dist < 100);
                 f.style.left = x + "px"; f.style.top = y + "px";
-                f.dataset.ok = (txt === activeM.w);
+                f.dataset.ok = (txt === cur.w);
                 box.appendChild(f);
             });
         }
@@ -74,49 +79,56 @@
             if (y !== 0 && dir.y === 0) dir = {x: 0, y};
         }
 
+        function die() {
+            lives--; 
+            document.getElementById("s_die").play();
+            snake = [{x: 100, y: 100}, {x: 80, y: 100}];
+            dir = {x: 0, y: 0};
+            if (lives <= 0) {
+                alert("GAME OVER - NO LIVES LEFT");
+                location.reload();
+            }
+            document.getElementById("lives").innerText = lives;
+        }
+
         setInterval(() => {
             if (dir.x === 0 && dir.y === 0) return;
             let head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
             
-            // MUERTE POR COLA
-            if(snake.some((p,i) => i!==0 && p.x === head.x && p.y === head.y)) {
-                lives--; document.getElementById("s_die").play(); 
-                resetSnake(); return;
+            // COLISIÓN CON PAREDES (MUERE)
+            if (head.x < 0 || head.x >= window.innerWidth - 18 || head.y < 0 || head.y >= box.clientHeight - 18) {
+                die(); return;
             }
 
-            // TÚNEL
-            if (head.x < 0) head.x = window.innerWidth - 20; else if (head.x >= window.innerWidth) head.x = 0;
-            if (head.y < 0) head.y = box.clientHeight - 20; else if (head.y >= box.clientHeight) head.y = 0;
-            
+            // MUERTE POR COLA
+            if(snake.some((p,i) => i!==0 && p.x === head.x && p.y === head.y)) {
+                die(); return;
+            }
+
             snake.unshift(head);
             let ate = false;
             document.querySelectorAll(".food").forEach(f => {
-                // COLISIÓN PIXEL GENEROSA
                 if (Math.abs(head.x - parseInt(f.style.left)) < 35 && Math.abs(head.y - parseInt(f.style.top)) < 35) {
                     if (f.dataset.ok === "true") {
                         document.getElementById("s_eat").play(); score += 100; rd++; 
                         if(rd >= 10) { alert("CYBER-VICTORY!"); location.reload(); }
                         spawn();
                     } else {
-                        document.getElementById("s_err").play(); lives--; score = Math.max(0, score-50);
+                        document.getElementById("s_err").play(); score = Math.max(0, score-50);
                     }
-                    ate = true; if(lives <= 0) location.reload();
+                    ate = true;
                 }
             });
             if (!ate) snake.pop();
             draw();
             document.getElementById("score").innerText = score;
-            document.getElementById("lives").innerText = lives;
-        }, 130);
-
-        function resetSnake() { snake = [{x: 100, y: 100}, {x: 80, y: 100}]; dir = {x:0, y:0}; }
+        }, 140);
 
         function draw() {
             document.querySelectorAll(".snake").forEach(s => s.remove());
             snake.forEach((p, i) => {
                 const s = document.createElement("div"); s.className = "snake";
                 s.style.left = p.x + "px"; s.style.top = p.y + "px";
-                if(i===0) s.style.background = "#fff";
                 box.appendChild(s);
             });
         }
