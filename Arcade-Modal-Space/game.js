@@ -4,89 +4,80 @@ const scoreEl = document.getElementById("score");
 const roundEl = document.getElementById("round-counter");
 const sentenceEl = document.getElementById("sentence-display");
 
-// Ajuste dinámico para pantallas de móvil
-function resizeCanvas() {
-    canvas.width = window.innerWidth < 480 ? window.innerWidth * 0.95 : 480;
-    canvas.height = window.innerHeight * 0.6;
+// Ajuste forzado para móvil
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight * 0.6; // Ocupa el 60% de la pantalla
 }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+window.addEventListener('resize', resize);
+resize();
 
-let score = 0, currentRound = 1;
-const totalRounds = (typeof db !== 'undefined') ? db.length : 10;
-let player = { x: canvas.width / 2 - 25, y: canvas.height - 60, w: 50, h: 40 };
-let bullets = [], invaders = [], gameActive = true;
-
-function updateHUD() {
-    scoreEl.innerText = score;
-    if (roundEl) roundEl.innerText = `RD: ${currentRound}/${totalRounds}`;
-}
+let score = 0, currentRound = 1, gameActive = true;
+const totalRounds = (typeof db !== 'undefined') ? db.length : 15;
+let player = { x: canvas.width / 2 - 20, y: canvas.height - 50, w: 40, h: 40 };
+let bullets = [], invaders = [];
 
 function loadMission() {
     if (typeof db !== 'undefined' && db[currentRound - 1]) {
         sentenceEl.innerText = db[currentRound - 1].s;
-        spawnInvaders(db[currentRound - 1].options, db[currentRound - 1].ans);
+        const options = db[currentRound - 1].options;
+        const answer = db[currentRound - 1].ans;
+        invaders = [];
+        const spacing = canvas.width / options.length;
+        options.forEach((opt, i) => {
+            invaders.push({
+                x: (i * spacing) + 10,
+                y: 10,
+                w: spacing - 20,
+                h: 30,
+                text: opt,
+                isCorrect: opt === answer,
+                speed: 0.5 + (currentRound * 0.05)
+            });
+        });
     }
 }
 
-function spawnInvaders(options, answer) {
-    invaders = [];
-    const spacing = canvas.width / options.length;
-    options.forEach((opt, i) => {
-        invaders.push({
-            x: (i * spacing) + 5,
-            y: 20,
-            w: spacing - 10,
-            h: 35,
-            text: opt,
-            isCorrect: opt === answer,
-            speed: 0.5 + (currentRound * 0.1)
-        });
-    });
-}
-
-// CONTROLES TÁCTILES (MÓVIL)
+// CONTROL TÁCTIL MEJORADO
 canvas.addEventListener("touchmove", (e) => {
     e.preventDefault();
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
+    let touch = e.touches[0];
+    let rect = canvas.getBoundingClientRect();
     player.x = (touch.clientX - rect.left) - player.w / 2;
 }, { passive: false });
 
 canvas.addEventListener("touchstart", (e) => {
-    e.preventDefault();
     if (gameActive) bullets.push({ x: player.x + player.w / 2, y: player.y });
 }, { passive: false });
 
 function update() {
     if (!gameActive) return;
     bullets.forEach((b, bi) => {
-        b.y -= 7;
+        b.y -= 5;
         invaders.forEach((inv, ii) => {
             if (b.x > inv.x && b.x < inv.x + inv.w && b.y > inv.y && b.y < inv.y + inv.h) {
-                if (inv.isCorrect) { score += 100; nextLevel(); } 
-                else { score = Math.max(0, score - 50); }
+                if (inv.isCorrect) { score += 100; nextLevel(); }
                 bullets.splice(bi, 1);
             }
         });
     });
     invaders.forEach(inv => {
         inv.y += inv.speed;
-        if (inv.y > canvas.height - 50) endGame(false);
+        if (inv.y > canvas.height - 40) endGame(false);
     });
     bullets = bullets.filter(b => b.y > 0);
 }
 
 function nextLevel() {
-    if (currentRound < totalRounds) { currentRound++; updateHUD(); loadMission(); } 
+    if (currentRound < totalRounds) { currentRound++; loadMission(); } 
     else { endGame(true); }
 }
 
 function draw() {
-    ctx.fillStyle = "#050508";
+    ctx.fillStyle = "#000"; // Fondo negro
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Nave
+    // Jugador
     ctx.fillStyle = "#00d4ff";
     ctx.fillRect(player.x, player.y, player.w, player.h);
 
@@ -94,15 +85,17 @@ function draw() {
     ctx.fillStyle = "#ff00ff";
     bullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 10));
 
-    // Opciones (Invasores)
+    // Invasores
     invaders.forEach(inv => {
         ctx.strokeStyle = "#00ff41";
         ctx.strokeRect(inv.x, inv.y, inv.w, inv.h);
         ctx.fillStyle = "white";
-        ctx.font = "12px Arial";
+        ctx.font = "14px Arial";
         ctx.textAlign = "center";
-        ctx.fillText(inv.text, inv.x + inv.w/2, inv.y + 22);
+        ctx.fillText(inv.text, inv.x + inv.w/2, inv.y + 20);
     });
+    scoreEl.innerText = score;
+    roundEl.innerText = `RD: ${currentRound}/${totalRounds}`;
 }
 
 function gameLoop() {
@@ -110,10 +103,5 @@ function gameLoop() {
     if (gameActive) requestAnimationFrame(gameLoop);
 }
 
-function endGame(win) {
-    gameActive = false;
-    alert(win ? "MISIÓN CUMPLIDA" : "GAME OVER");
-    location.reload();
-}
-
-updateHUD(); loadMission(); gameLoop();
+loadMission();
+gameLoop();
