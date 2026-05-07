@@ -3,49 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Arcade Space: Grammar Defense</title>
+    <title>CYT: Modal Defense</title>
     <style>
-        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; }
-        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        
-        /* HUD Mejorado */
-        .hud { 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            padding: 15px; 
+        :root {
+            --blue: #00d4ff;
+            --pink: #ff00ff;
+            --bg: #050508;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* HUD - Barra Superior */
+        .hud {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 15px;
             background: rgba(0, 0, 0, 0.9);
             border-bottom: 2px solid var(--blue);
-            font-family: monospace;
+            box-shadow: 0 0 15px var(--blue);
             z-index: 10;
         }
-        .hud-item { font-size: 1.2rem; font-weight: bold; color: var(--blue); }
-        #round-counter { color: var(--pink); text-shadow: 0 0 5px var(--pink); }
 
-        #game-container { flex-grow: 1; position: relative; display: flex; align-items: center; justify-content: center; }
-        canvas { border: 2px solid #222; background: #000; max-width: 100%; max-height: 100%; }
+        .hud-item {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--blue);
+            text-transform: uppercase;
+        }
 
+        /* Contador de Rondas destacado en Rosa */
+        #round-counter {
+            color: var(--pink);
+            text-shadow: 0 0 8px var(--pink);
+        }
+
+        /* Pantalla de la Oración */
         #sentence-display {
-            position: absolute; top: 80px; width: 100%; text-align: center;
-            font-size: 1.5rem; color: #fff; text-shadow: 0 0 10px var(--blue);
-            pointer-events: none; font-weight: bold;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.4rem;
+            background: rgba(0, 212, 255, 0.1);
+            color: #fff;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #222;
+        }
+
+        /* Área de Juego */
+        #game-container {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #111 0%, #000 100%);
+        }
+
+        canvas {
+            border: 1px solid #333;
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Botón Volver al Menú */
+        .back-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background: transparent;
+            border: 1px solid var(--pink);
+            color: var(--pink);
+            text-decoration: none;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            transition: 0.3s;
+            z-index: 20;
+        }
+
+        .back-btn:hover {
+            background: var(--pink);
+            color: black;
         }
     </style>
 </head>
 <body>
 
     <div class="hud">
-        <div class="hud-item">PUNTOS: <span id="score">0</span></div>
-        <div class="hud-item" id="round-counter">MISIÓN: 1/0</div>
+        <div class="hud-item">SCORE: <span id="score">0</span></div>
+        <div class="hud-item" id="round-counter">RD: 1/15</div>
     </div>
 
-    <div id="sentence-display">Cargando misión...</div>
+    <div id="sentence-display">CARGANDO SISTEMA DE DEFENSA...</div>
 
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
     </div>
 
+    <a href="../index.html" class="back-btn">◀ SALIR AL HUB</a>
+
     <script src="data.js"></script>
     <script src="game.js"></script>
+
 </body>
 </html>
