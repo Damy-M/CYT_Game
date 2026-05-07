@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CyberModal: Direct Touch</title>
+    <title>CyberModal: English Mission</title>
     <style>
-        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; --green: #00ff41; --red: #ff3131; }
+        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; --green: #00ff41; --red: #ff3131; --yellow: #ccff00; }
         
         body { 
             background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; 
@@ -48,13 +48,15 @@
         }
         
         button { 
-            background: linear-gradient(45deg, #9d00ff, var(--pink)); color: white; 
+            background: linear-gradient(45deg, #00d4ff, #9d00ff); color: white; 
             border: none; padding: 20px 60px; border-radius: 12px; font-weight: bold; 
-            text-transform: uppercase; font-size: 20px;
+            text-transform: uppercase; font-size: 20px; cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
         }
 
         .hidden { display: none !important; }
-        u { color: var(--pink); text-decoration: underline; font-weight: bold; }
+        u { color: var(--yellow); text-decoration: underline; font-weight: bold; }
+        .correct-ans { color: var(--green); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -67,21 +69,22 @@
     <div id="battle-field">
         <div class="hud">
             <div>SHIELD: <span id="lives-display" style="color: var(--red);">5/5</span></div>
-            <div>XP: <span id="wins-display">0</span></div>
+            <div>SCORE: <span id="wins-display">0</span></div>
         </div>
-        <div id="sentence-panel">TOUCH TO START</div>
+        <div id="sentence-panel">SYSTEM READY</div>
     </div>
 
     <div id="start-screen" class="overlay">
         <h1 style="color:var(--blue); font-size: 40px; margin: 0;">CYBERMODAL</h1>
-        <p style="color:var(--pink); letter-spacing: 3px; margin-bottom: 30px;">TOUCH EDITION</p>
-        <button id="btn-start">INITIALIZE</button>
+        <p style="color:var(--pink); letter-spacing: 3px; margin-bottom: 30px;">GRAMMAR DEFENSE MISSION</p>
+        <p style="margin-bottom: 20px; font-size: 1rem;">Tap the correct Modal Verb to complete the sentence.</p>
+        <button id="btn-start">INITIALIZE MISSION</button>
     </div>
 
     <div id="end-screen" class="overlay hidden">
-        <h1 id="end-status">MISSION ENDED</h1>
+        <h1 id="end-status">MISSION TERMINATED</h1>
         <div id="feedback-report"></div>
-        <button onclick="location.reload()">REBOOT</button>
+        <button onclick="location.reload()" style="margin-top: 20px;">SYSTEM REBOOT</button>
     </div>
 
     <script src="data.js"></script>
@@ -98,19 +101,30 @@
         let lives = 5, wins = 0, currentRound = 0, gameActive = false, invaders = [];
         let sessionData = [], mistakesLog = [];
 
+        // Pool of random words for distractors (English Modals)
+        const modalsPool = ["CAN", "MUST", "SHOULD", "MAY", "MIGHT", "COULD", "SHALL", "WOULD", "CAN'T", "MUSTN'T"];
+
         function initGame() {
+            // Using 'db' from data.js
             sessionData = [...db].sort(() => 0.5 - Math.random());
             lives = 5; wins = 0; currentRound = 0; mistakesLog = [];
+            
             document.getElementById('lives-display').innerText = `${lives}/5`;
             document.getElementById('wins-display').innerText = wins;
+            
             gameActive = true;
-            audios.bg.volume = 0.4; audios.bg.play().catch(()=>{});
+            audios.bg.volume = 0.3;
+            audios.bg.play().catch(()=>{});
+            
             loadLevel();
             requestAnimationFrame(updateLoop);
         }
 
         function loadLevel() {
-            if (currentRound >= sessionData.length || lives <= 0) { endGame(lives > 0); return; }
+            if (currentRound >= sessionData.length || lives <= 0) { 
+                endGame(lives > 0); 
+                return; 
+            }
             sentenceEl.innerHTML = sessionData[currentRound].s;
             createInvaders();
         }
@@ -118,39 +132,56 @@
         function createInvaders() {
             invaders.forEach(i => i.el.remove());
             invaders = [];
+            
             const correctWord = sessionData[currentRound].ans;
-            let pool = [correctWord, ...wordsPool.filter(w => w !== correctWord).sort(() => 0.5 - Math.random()).slice(0, 3)];
-            pool.sort(() => 0.5 - Math.random());
+            
+            // Create a pool of 4 options
+            let options = [correctWord];
+            while(options.length < 4) {
+                let randomModal = modalsPool[Math.floor(Math.random() * modalsPool.length)];
+                if(!options.includes(randomModal)) options.push(randomModal);
+            }
+            options.sort(() => 0.5 - Math.random());
 
-            pool.forEach((word, i) => {
+            options.forEach((word, i) => {
                 const el = document.createElement('div');
                 el.className = 'invader';
                 el.innerText = word;
                 const color = neonColors[i % neonColors.length];
                 el.style.color = color; el.style.borderColor = color;
-                el.style.left = (5 + (i * 24)) + "%";
+                el.style.left = (10 + (i * 22)) + "%";
                 el.style.top = "-80px";
-                el.onclick = (e) => { e.stopPropagation(); checkWord(word, el); };
+                
+                el.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    checkWord(word, el); 
+                };
+                
                 field.appendChild(el);
-                invaders.push({ el, y: -80, speed: 1.0 + (Math.random() * 0.8) });
+                invaders.push({ el, y: -80, speed: 1.0 + (Math.random() * 0.7) });
             });
         }
 
         function checkWord(picked, el) {
             if (!gameActive) return;
             const question = sessionData[currentRound];
-            if (picked === question.ans) {
-                audios.hit.currentTime = 0; audios.hit.play().catch(()=>{});
-                currentRound++; wins += 100;
+            
+            if (picked.toLowerCase() === question.ans.toLowerCase()) {
+                audios.hit.currentTime = 0;
+                audios.hit.play().catch(()=>{});
+                currentRound++;
+                wins += 100;
                 document.getElementById('wins-display').innerText = wins;
                 loadLevel();
             } else {
                 if (!mistakesLog.some(m => m.s === question.s)) mistakesLog.push(question);
                 lives--;
                 if(window.navigator.vibrate) window.navigator.vibrate(100);
-                audios.lose.currentTime = 0; audios.lose.play().catch(()=>{});
+                audios.lose.currentTime = 0;
+                audios.lose.play().catch(()=>{});
                 document.getElementById('lives-display').innerText = `${lives}/5`;
-                el.style.opacity = "0.2"; el.style.pointerEvents = "none";
+                el.style.opacity = "0.2";
+                el.style.pointerEvents = "none";
                 if (lives <= 0) endGame(false);
             }
         }
@@ -160,26 +191,31 @@
             invaders.forEach(inv => {
                 inv.y += inv.speed;
                 inv.el.style.top = inv.y + "px";
+                // Respawn at top if it goes off screen
                 if (inv.y > window.innerHeight) inv.y = -80;
             });
             requestAnimationFrame(updateLoop);
         }
 
         function endGame(isWin) {
-            gameActive = false; audios.bg.pause();
+            gameActive = false;
+            audios.bg.pause();
             if(isWin) audios.win.play().catch(()=>{});
+            
             document.getElementById('end-screen').classList.remove('hidden');
-            document.getElementById('end-status').innerText = isWin ? "TRANSMISSION SECURED" : "UPLINK LOST";
+            document.getElementById('end-status').innerText = isWin ? "MISSION ACCOMPLISHED" : "CONNECTION LOST";
             document.getElementById('end-status').style.color = isWin ? "var(--green)" : "var(--red)";
             
             const report = document.getElementById('feedback-report');
             if (mistakesLog.length > 0) {
-                let html = "<h3>DEBRIEFING:</h3><ol>";
+                let html = "<h3>MISSION DEBRIEFING (ERRORS):</h3><ol>";
                 mistakesLog.forEach(m => {
-                    html += `<li>${m.s.replace("____", "<u>" + m.ans + "</u>")}<br><small style='color:var(--blue)'>${m.loss}</small></li>`;
+                    html += `<li>${m.s.replace("____", "<span class='correct-ans'>" + m.ans + "</span>")}<br><small style='color:var(--blue)'>Usage: ${m.loss}</small></li>`;
                 });
                 report.innerHTML = html + "</ol>";
-            } else { report.innerHTML = "<h3>PERFECT ACCURACY!</h3>"; }
+            } else { 
+                report.innerHTML = "<h3>PERFECT ACCURACY!</h3><p>All linguistic targets neutralized successfully.</p>"; 
+            }
         }
 
         document.getElementById('btn-start').onclick = () => {
