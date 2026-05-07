@@ -4,12 +4,7 @@ const scoreEl = document.getElementById("score");
 const roundEl = document.getElementById("round-counter");
 const sentenceEl = document.getElementById("sentence-display");
 
-let score = 0;
-let currentRound = 1;
-let gameActive = true;
-let invaders = [];
-
-// Ajuste inicial
+let score = 0, currentRound = 1, gameActive = true, invaders = [];
 const areaW = area.clientWidth || window.innerWidth;
 const areaH = area.clientHeight || (window.innerHeight * 0.6);
 
@@ -25,88 +20,62 @@ function loadMission() {
 }
 
 function spawnInvaders(options, answer) {
-    // Limpiar naves anteriores
     document.querySelectorAll('.invader').forEach(i => i.remove());
     invaders = [];
-    
     const spacing = areaW / options.length;
-    
     options.forEach((opt, i) => {
         const div = document.createElement('div');
         div.className = 'invader';
         div.innerText = opt;
         div.style.top = "-50px";
         div.style.left = (i * spacing + 10) + "px";
-        
-        // Al tocar la palabra, se "dispara"
-        div.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (!gameActive) return;
-            checkAnswer(opt === answer, div);
-        });
-
+        div.onclick = () => checkAnswer(opt === answer, div); // Feedback inmediato al tocar
         area.appendChild(div);
-        invaders.push({ 
-            div, 
-            y: -50, 
-            speed: 0.8 + (currentRound * 0.1) 
-        });
+        invaders.push({ div, y: -50, speed: 0.8 + (currentRound * 0.1) });
     });
 }
 
 function checkAnswer(correct, div) {
+    if (!gameActive) return;
+    const fb = document.createElement('div');
+    fb.style.position = 'absolute';
+    fb.style.left = div.style.left;
+    fb.style.top = div.style.top;
+    fb.style.zIndex = '50';
+    fb.style.fontWeight = 'bold';
+
     if (correct) {
         score += 100;
-        scoreEl.innerText = score;
+        fb.innerText = "EXCELLENT!";
+        fb.style.color = "#00ff41";
         div.style.backgroundColor = "#00ff41";
-        div.style.color = "#000";
-        setTimeout(() => {
-            if (currentRound < db.length) {
-                currentRound++;
-                loadMission();
-            } else {
-                endGame(true);
-            }
-        }, 400);
+        gameActive = false; // Pausa para feedback
+        setTimeout(() => { gameActive = true; currentRound++; loadMission(); }, 800);
     } else {
         score = Math.max(0, score - 50);
-        scoreEl.innerText = score;
+        fb.innerText = "RETRY!";
+        fb.style.color = "#ff3131";
         div.style.borderColor = "#ff3131";
-        div.style.boxShadow = "0 0 15px #ff3131";
+        setTimeout(() => fb.remove(), 500);
     }
+    area.appendChild(fb);
+    scoreEl.innerText = score;
 }
 
-// Control táctil para mover la nave visualmente
-area.addEventListener("touchmove", (e) => {
-    const touch = e.touches[0];
-    const rect = area.getBoundingClientRect();
-    let x = touch.clientX - rect.left;
-    if (x > 20 && x < areaW - 20) {
-        player.style.left = x + "px";
-    }
-}, { passive: true });
-
-// Bucle de movimiento
 function update() {
     if (!gameActive) return;
-    
     invaders.forEach(inv => {
         inv.y += inv.speed;
         inv.div.style.top = inv.y + "px";
-        
-        // Si la palabra llega a la nave
-        if (inv.y > areaH - 80) {
-            endGame(false);
-        }
+        if (inv.y > areaH - 80) endGame(false);
     });
 }
 
 function endGame(win) {
     gameActive = false;
-    alert(win ? "¡SISTEMA ASEGURADO! Puntaje: " + score : "ERROR CRÍTICO: GAME OVER");
+    alert(win ? "SYSTEM SECURED!" : "DEFENSES BREACHED!");
     location.reload();
 }
 
-// Iniciar
 loadMission();
-setInterval(update, 20); // 50 cuadros por segundo
+setInterval(update, 20);
