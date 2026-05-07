@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CyberModal Arcade: Mobile Edition</title>
+    <title>CyberModal: Direct Touch</title>
     <style>
         :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; --green: #00ff41; --red: #ff3131; }
         
         body { 
             background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; 
-            overflow: hidden; margin: 0; touch-action: none; /* Evita zoom accidental */
+            overflow: hidden; margin: 0; touch-action: none; 
         }
 
         #battle-field { 
@@ -18,29 +18,22 @@
         }
         
         .invader { 
-            position: absolute; padding: 15px 10px; border: 2px solid; border-radius: 8px;
+            position: absolute; padding: 15px 12px; border: 2px solid; border-radius: 12px;
             background: rgba(0, 0, 0, 0.9); font-weight: bold; text-transform: uppercase;
-            font-size: 16px; min-width: 70px; text-align: center; z-index: 5;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        #player-ship { 
-            position: absolute; bottom: 80px; width: 0; height: 0; 
-            border-left: 25px solid transparent; border-right: 25px solid transparent;
-            border-bottom: 40px solid #fff; filter: drop-shadow(0 0 15px var(--blue));
-            transform: translateX(-50%); pointer-events: none;
+            font-size: 18px; min-width: 80px; text-align: center; z-index: 5;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
 
         #sentence-panel { 
-            position: absolute; top: 110px; width: 100%; text-align: center; 
-            font-size: 24px; padding: 0 15px; box-sizing: border-box; 
-            color: #fff; text-shadow: 0 0 8px var(--pink);
+            position: absolute; top: 120px; width: 100%; text-align: center; 
+            font-size: 26px; padding: 0 20px; box-sizing: border-box; 
+            color: #fff; text-shadow: 0 0 10px var(--pink);
         }
 
         .hud { 
-            position: absolute; top: 30px; width: 100%; display: flex; 
+            position: absolute; top: 40px; width: 100%; display: flex; 
             justify-content: space-around; color: var(--blue); 
-            font-size: 18px; font-weight: bold; font-family: monospace; z-index: 10; 
+            font-size: 20px; font-weight: bold; font-family: monospace; z-index: 10; 
         }
         
         .overlay { 
@@ -50,14 +43,14 @@
         }
 
         #feedback-report { 
-            width: 90%; max-height: 45vh; overflow-y: auto; background: #000; 
+            width: 90%; max-height: 50vh; overflow-y: auto; background: #000; 
             padding: 15px; border: 1px solid #333; margin-top: 15px; text-align: left; 
         }
         
         button { 
             background: linear-gradient(45deg, #9d00ff, var(--pink)); color: white; 
             border: none; padding: 20px 60px; border-radius: 12px; font-weight: bold; 
-            text-transform: uppercase; font-size: 20px; box-shadow: 0 0 20px var(--pink)55;
+            text-transform: uppercase; font-size: 20px;
         }
 
         .hidden { display: none !important; }
@@ -76,27 +69,24 @@
             <div>SHIELD: <span id="lives-display" style="color: var(--red);">5/5</span></div>
             <div>XP: <span id="wins-display">0</span></div>
         </div>
-        <div id="sentence-panel">INITIALIZING...</div>
-        <div id="player-ship"></div>
+        <div id="sentence-panel">TOUCH TO START</div>
     </div>
 
     <div id="start-screen" class="overlay">
         <h1 style="color:var(--blue); font-size: 40px; margin: 0;">CYBERMODAL</h1>
-        <p style="color:var(--pink); letter-spacing: 3px; margin-bottom: 30px;">MOBILE MISSION</p>
-        <p style="font-size: 1rem; margin-bottom: 30px;">Toca las palabras correctas mientras caen. ¡Usa tu pulgar para mover la nave!</p>
-        <button id="btn-start">CONNECT</button>
+        <p style="color:var(--pink); letter-spacing: 3px; margin-bottom: 30px;">TOUCH EDITION</p>
+        <button id="btn-start">INITIALIZE</button>
     </div>
 
     <div id="end-screen" class="overlay hidden">
-        <h1 id="end-status" style="font-size: 30px;">MISSION ENDED</h1>
+        <h1 id="end-status">MISSION ENDED</h1>
         <div id="feedback-report"></div>
-        <button onclick="location.reload()">RETRY</button>
+        <button onclick="location.reload()">REBOOT</button>
     </div>
 
     <script src="data.js"></script>
     <script>
         const field = document.getElementById('battle-field');
-        const ship = document.getElementById('player-ship');
         const sentenceEl = document.getElementById('sentence-panel');
         
         const audios = {
@@ -129,7 +119,6 @@
             invaders.forEach(i => i.el.remove());
             invaders = [];
             const correctWord = sessionData[currentRound].ans;
-            // Solo 4 opciones en móvil para que no se amontonen
             let pool = [correctWord, ...wordsPool.filter(w => w !== correctWord).sort(() => 0.5 - Math.random()).slice(0, 3)];
             pool.sort(() => 0.5 - Math.random());
 
@@ -139,11 +128,11 @@
                 el.innerText = word;
                 const color = neonColors[i % neonColors.length];
                 el.style.color = color; el.style.borderColor = color;
-                el.style.left = (5 + (i * 24)) + "%"; // Espaciado para pulgares
+                el.style.left = (5 + (i * 24)) + "%";
                 el.style.top = "-80px";
                 el.onclick = (e) => { e.stopPropagation(); checkWord(word, el); };
                 field.appendChild(el);
-                invaders.push({ el, y: -80, speed: 1.2 + (Math.random() * 0.8) });
+                invaders.push({ el, y: -80, speed: 1.0 + (Math.random() * 0.8) });
             });
         }
 
@@ -175,14 +164,6 @@
             });
             requestAnimationFrame(updateLoop);
         }
-
-        // CONTROL TÁCTIL PARA LA NAVE
-        field.addEventListener('touchmove', (e) => {
-            if (gameActive) {
-                const touchX = e.touches[0].clientX;
-                ship.style.left = touchX + "px";
-            }
-        }, { passive: true });
 
         function endGame(isWin) {
             gameActive = false; audios.bg.pause();
