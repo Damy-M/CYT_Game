@@ -1,190 +1,158 @@
-// game.js
-const board = document.getElementById('game-board');
-const missionEl = document.getElementById('mission-control');
-const scoreVal = document.getElementById('score-val');
-const shieldVal = document.getElementById('shield-val');
+// Arcade Space - Modal Defense Logic
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+const roundEl = document.getElementById("round-counter");
+const sentenceEl = document.getElementById("sentence-display");
 
-// Referencias de audio
-const snd = {
-    bg: document.getElementById('snd-bg'),
-    eat: document.getElementById('snd-eat'),
-    win: document.getElementById('snd-win'),
-    lose: document.getElementById('snd-lose')
-};
+// Configuración de pantalla
+canvas.width = 480;
+canvas.height = 550;
 
-// Configuración inicial
-let snake = [{x: 160, y: 160}, {x: 140, y: 160}, {x: 120, y: 160}];
-let dir = {x: 20, y: 0}, nextDir = {x: 20, y: 0};
-let active = false;
+// VARIABLES DE JUEGO
 let score = 0;
-let lives = 5;
-let currentStep = 0;
-let missionIndex = 0;
-let foods = [];
-let mistakesLog = [];
-let currentMission;
+let currentRound = 1;
+// Detecta automáticamente cuántas frases hay en tu data.js
+const totalRounds = (typeof db !== 'undefined') ? db.length : 10;
 
-const boxSize = 20;
+let player = { x: canvas.width / 2 - 25, y: canvas.height - 70, w: 50, h: 50 };
+let bullets = [];
+let invaders = [];
+let gameActive = true;
 
-// Colores neón para las palabras
-const neonColors = ['#00d4ff', '#ff00ff', '#00ff41', '#ff3131', '#9d00ff', '#ffff00'];
-
-// Iniciar el juego (Llamada desde el botón del index.html)
-window.initGame = function() {
-    active = true;
-    score = 0;
-    lives = 5;
-    missionIndex = 0;
-    mistakesLog = [];
-    resetMission();
-    gameLoop();
-};
-
-function resetMission() {
-    // Usamos snakeMissions de tu data.js
-    currentMission = snakeMissions[missionIndex];
-    currentStep = 0;
-    spawnFoods();
-    renderHUD();
+// 1. ACTUALIZAR TEXTOS EN PANTALLA
+function updateHUD() {
+    scoreEl.innerText = score;
+    // Esto actualiza el RD: 1/15
+    if (roundEl) {
+        roundEl.innerText = `RD: ${currentRound}/${totalRounds}`;
+    }
 }
 
-function spawnFoods() {
-    // Limpiar palabras anteriores
-    document.querySelectorAll('.food-item').forEach(f => f.remove());
-    foods = [];
+// 2. CARGAR MISIÓN ACTUAL
+function loadMission() {
+    if (typeof db !== 'undefined' && db[currentRound - 1]) {
+        const mission = db[currentRound - 1];
+        sentenceEl.innerText = mission.s; // Muestra la oración con el espacio
+        spawnInvaders(mission.options, mission.ans);
+    }
+}
 
-    // Palabra correcta
-    const correctWord = currentMission.words[currentStep];
-    // Palabras falsas
-    const options = [correctWord, ...currentMission.fakes];
-
-    options.forEach(text => {
-        const food = {
-            x: Math.floor(Math.random() * (board.clientWidth / boxSize - 2) + 1) * boxSize,
-            y: Math.floor(Math.random() * (board.clientHeight / boxSize - 2) + 1) * boxSize,
-            text: text,
-            color: neonColors[Math.floor(Math.random() * neonColors.length)]
-        };
-        foods.push(food);
-        createFoodElement(food);
+function spawnInvaders(options, answer) {
+    invaders = [];
+    const spacing = canvas.width / options.length;
+    options.forEach((opt, i) => {
+        invaders.push({
+            x: (i * spacing) + 10,
+            y: -50, // Aparecen desde arriba
+            w: spacing - 20,
+            h: 40,
+            text: opt,
+            isCorrect: opt === answer,
+            speed: 0.8 + (currentRound * 0.1) // Aumenta velocidad cada nivel
+        });
     });
 }
 
-function createFoodElement(food) {
-    const div = document.createElement('div');
-    div.className = 'food-item';
-    div.innerText = food.text.toUpperCase();
-    div.style.left = food.x + 'px';
-    div.style.top = food.y + 'px';
-    div.style.color = food.color;
-    board.appendChild(div);
-}
-
-// Control por teclado
-window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowUp' && dir.y === 0) nextDir = {x: 0, y: -boxSize};
-    if (e.key === 'ArrowDown' && dir.y === 0) nextDir = {x: 0, y: boxSize};
-    if (e.key === 'ArrowLeft' && dir.x === 0) nextDir = {x: -boxSize, y: 0};
-    if (e.key === 'ArrowRight' && dir.x === 0) nextDir = {x: boxSize, y: 0};
-});
-
+// 3. LÓGICA DE MOVIMIENTO Y COLISIONES
 function update() {
-    if (!active) return;
+    if (!gameActive) return;
 
-    dir = nextDir;
-    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-
-    // Efecto túnel (Atravesar paredes)
-    if (head.x < 0) head.x = board.clientWidth - boxSize;
-    if (head.x >= board.clientWidth) head.x = 0;
-    if (head.y < 0) head.y = board.clientHeight - boxSize;
-    if (head.y >= board.clientHeight) head.y = 0;
-
-    // Colisión con el cuerpo
-    if (snake.some(p => p.x === head.x && p.y === head.y)) {
-        gameOver("¡TE HAS MORDIDO!");
-        return;
-    }
-
-    let ate = false;
-    // Chequear si come una palabra
-    foods.forEach((f, i) => {
-        if (head.x === f.x && head.y === f.y) {
-            if (f.text === currentMission.words[currentStep]) {
-                // Acierto
-                snd.eat.play();
-                score += 100;
-                currentStep++;
-                ate = true;
-                if (currentStep >= currentMission.words.length) {
-                    missionIndex++;
-                    if (missionIndex >= snakeMissions.length) {
-                        victory();
-                    } else {
-                        resetMission();
-                    }
+    // Balas
+    bullets.forEach((b, bi) => {
+        b.y -= 8;
+        invaders.forEach((inv, ii) => {
+            if (b.x > inv.x && b.x < inv.x + inv.w && b.y > inv.y && b.y < inv.y + inv.h) {
+                if (inv.isCorrect) {
+                    score += 100;
+                    bullets.splice(bi, 1);
+                    nextLevel();
                 } else {
-                    spawnFoods();
+                    score = Math.max(0, score - 50); // Penalización
+                    bullets.splice(bi, 1);
                 }
-            } else {
-                // Error
-                lives--;
-                mistakesLog.push({word: f.text, correct: currentMission.words[currentStep], note: currentMission.note});
-                if (lives <= 0) gameOver("ESCUDOS AGOTADOS");
             }
+        });
+    });
+
+    // Invasores
+    invaders.forEach(inv => {
+        inv.y += inv.speed;
+        if (inv.y > canvas.height - 100) {
+            endGame(false); // Si tocan la línea del jugador
         }
     });
 
-    if (!ate) snake.pop();
-    snake.unshift(head);
-    
-    draw();
+    bullets = bullets.filter(b => b.y > 0);
 }
 
+// 4. PASAR DE NIVEL
+function nextLevel() {
+    if (currentRound < totalRounds) {
+        currentRound++;
+        updateHUD();
+        loadMission();
+    } else {
+        endGame(true);
+    }
+}
+
+// 5. RENDERIZADO (DIBUJO)
 function draw() {
-    // Dibujar serpiente
-    document.querySelectorAll('.snake-part').forEach(p => p.remove());
-    snake.forEach((p, i) => {
-        const div = document.createElement('div');
-        div.className = 'snake-part';
-        div.style.left = p.x + 'px';
-        div.style.top = p.y + 'px';
-        div.style.background = i === 0 ? '#00d4ff' : '#ff00ff';
-        board.appendChild(div);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Jugador (Nave)
+    ctx.fillStyle = "#00d4ff";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    // Brillo de la nave
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "#00d4ff";
+
+    // Balas
+    ctx.fillStyle = "#ff00ff";
+    ctx.shadowColor = "#ff00ff";
+    bullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 12));
+
+    // Invasores (Opciones)
+    ctx.shadowBlur = 0;
+    invaders.forEach(inv => {
+        ctx.strokeStyle = "#00ff41";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(inv.x, inv.y, inv.w, inv.h);
+        
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(inv.text.toUpperCase(), inv.x + inv.w/2, inv.y + 25);
     });
-
-    // Actualizar HUD
-    scoreVal.innerText = score;
-    shieldVal.innerText = `${lives}/5`;
-    renderHUD();
-}
-
-function renderHUD() {
-    // Muestra la frase con espacios por completar
-    missionEl.innerHTML = currentMission.words.map((w, i) => 
-        `<span class="slot ${i < currentStep ? 'done' : ''}">${i < currentStep ? w : '____'}</span>`
-    ).join(' ');
-}
-
-function gameOver(reason) {
-    active = false;
-    snd.bg.pause();
-    snd.lose.play();
-    alert(reason + "\n\nMisión fallida. Intenta de nuevo.");
-    location.reload();
-}
-
-function victory() {
-    active = false;
-    snd.bg.pause();
-    snd.win.play();
-    alert("¡FELICIDADES! Has completado todas las misiones gramaticales.");
-    location.reload();
 }
 
 function gameLoop() {
-    if (active) {
-        update();
-        setTimeout(gameLoop, 180); // Velocidad ajustada para pensar
-    }
+    update();
+    draw();
+    if (gameActive) requestAnimationFrame(gameLoop);
 }
+
+// CONTROLES (Mouse y Táctil)
+canvas.addEventListener("mousemove", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    player.x = mouseX - player.w / 2;
+});
+
+canvas.addEventListener("mousedown", () => {
+    if (gameActive) {
+        bullets.push({ x: player.x + player.w / 2 - 2, y: player.y });
+    }
+});
+
+function endGame(win) {
+    gameActive = false;
+    alert(win ? "SYSTEM SECURED: ¡HAS GANADO!" : "CRITICAL ERROR: GAME OVER");
+    location.reload();
+}
+
+// INICIO DEL SISTEMA
+updateHUD();
+loadMission();
+gameLoop();
