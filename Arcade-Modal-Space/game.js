@@ -1,107 +1,112 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+const area = document.getElementById("game-area");
+const player = document.getElementById("player");
 const scoreEl = document.getElementById("score");
 const roundEl = document.getElementById("round-counter");
 const sentenceEl = document.getElementById("sentence-display");
 
-// Ajuste forzado para móvil
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight * 0.6; // Ocupa el 60% de la pantalla
-}
-window.addEventListener('resize', resize);
-resize();
+let score = 0;
+let currentRound = 1;
+let gameActive = true;
+let invaders = [];
 
-let score = 0, currentRound = 1, gameActive = true;
-const totalRounds = (typeof db !== 'undefined') ? db.length : 15;
-let player = { x: canvas.width / 2 - 20, y: canvas.height - 50, w: 40, h: 40 };
-let bullets = [], invaders = [];
+// Ajuste inicial
+const areaW = area.clientWidth || window.innerWidth;
+const areaH = area.clientHeight || (window.innerHeight * 0.6);
 
 function loadMission() {
     if (typeof db !== 'undefined' && db[currentRound - 1]) {
-        sentenceEl.innerText = db[currentRound - 1].s;
-        const options = db[currentRound - 1].options;
-        const answer = db[currentRound - 1].ans;
-        invaders = [];
-        const spacing = canvas.width / options.length;
-        options.forEach((opt, i) => {
-            invaders.push({
-                x: (i * spacing) + 10,
-                y: 10,
-                w: spacing - 20,
-                h: 30,
-                text: opt,
-                isCorrect: opt === answer,
-                speed: 0.5 + (currentRound * 0.05)
-            });
-        });
+        const mission = db[currentRound - 1];
+        sentenceEl.innerText = mission.s;
+        roundEl.innerText = `RD: ${currentRound}/${db.length}`;
+        spawnInvaders(mission.options, mission.ans);
+    } else {
+        endGame(true);
     }
 }
 
-// CONTROL TÁCTIL MEJORADO
-canvas.addEventListener("touchmove", (e) => {
-    e.preventDefault();
-    let touch = e.touches[0];
-    let rect = canvas.getBoundingClientRect();
-    player.x = (touch.clientX - rect.left) - player.w / 2;
-}, { passive: false });
+function spawnInvaders(options, answer) {
+    // Limpiar naves anteriores
+    document.querySelectorAll('.invader').forEach(i => i.remove());
+    invaders = [];
+    
+    const spacing = areaW / options.length;
+    
+    options.forEach((opt, i) => {
+        const div = document.createElement('div');
+        div.className = 'invader';
+        div.innerText = opt;
+        div.style.top = "-50px";
+        div.style.left = (i * spacing + 10) + "px";
+        
+        // Al tocar la palabra, se "dispara"
+        div.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameActive) return;
+            checkAnswer(opt === answer, div);
+        });
 
-canvas.addEventListener("touchstart", (e) => {
-    if (gameActive) bullets.push({ x: player.x + player.w / 2, y: player.y });
-}, { passive: false });
-
-function update() {
-    if (!gameActive) return;
-    bullets.forEach((b, bi) => {
-        b.y -= 5;
-        invaders.forEach((inv, ii) => {
-            if (b.x > inv.x && b.x < inv.x + inv.w && b.y > inv.y && b.y < inv.y + inv.h) {
-                if (inv.isCorrect) { score += 100; nextLevel(); }
-                bullets.splice(bi, 1);
-            }
+        area.appendChild(div);
+        invaders.push({ 
+            div, 
+            y: -50, 
+            speed: 0.8 + (currentRound * 0.1) 
         });
     });
+}
+
+function checkAnswer(correct, div) {
+    if (correct) {
+        score += 100;
+        scoreEl.innerText = score;
+        div.style.backgroundColor = "#00ff41";
+        div.style.color = "#000";
+        setTimeout(() => {
+            if (currentRound < db.length) {
+                currentRound++;
+                loadMission();
+            } else {
+                endGame(true);
+            }
+        }, 400);
+    } else {
+        score = Math.max(0, score - 50);
+        scoreEl.innerText = score;
+        div.style.borderColor = "#ff3131";
+        div.style.boxShadow = "0 0 15px #ff3131";
+    }
+}
+
+// Control táctil para mover la nave visualmente
+area.addEventListener("touchmove", (e) => {
+    const touch = e.touches[0];
+    const rect = area.getBoundingClientRect();
+    let x = touch.clientX - rect.left;
+    if (x > 20 && x < areaW - 20) {
+        player.style.left = x + "px";
+    }
+}, { passive: true });
+
+// Bucle de movimiento
+function update() {
+    if (!gameActive) return;
+    
     invaders.forEach(inv => {
         inv.y += inv.speed;
-        if (inv.y > canvas.height - 40) endGame(false);
+        inv.div.style.top = inv.y + "px";
+        
+        // Si la palabra llega a la nave
+        if (inv.y > areaH - 80) {
+            endGame(false);
+        }
     });
-    bullets = bullets.filter(b => b.y > 0);
 }
 
-function nextLevel() {
-    if (currentRound < totalRounds) { currentRound++; loadMission(); } 
-    else { endGame(true); }
+function endGame(win) {
+    gameActive = false;
+    alert(win ? "¡SISTEMA ASEGURADO! Puntaje: " + score : "ERROR CRÍTICO: GAME OVER");
+    location.reload();
 }
 
-function draw() {
-    ctx.fillStyle = "#000"; // Fondo negro
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Jugador
-    ctx.fillStyle = "#00d4ff";
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-
-    // Balas
-    ctx.fillStyle = "#ff00ff";
-    bullets.forEach(b => ctx.fillRect(b.x, b.y, 4, 10));
-
-    // Invasores
-    invaders.forEach(inv => {
-        ctx.strokeStyle = "#00ff41";
-        ctx.strokeRect(inv.x, inv.y, inv.w, inv.h);
-        ctx.fillStyle = "white";
-        ctx.font = "14px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText(inv.text, inv.x + inv.w/2, inv.y + 20);
-    });
-    scoreEl.innerText = score;
-    roundEl.innerText = `RD: ${currentRound}/${totalRounds}`;
-}
-
-function gameLoop() {
-    update(); draw();
-    if (gameActive) requestAnimationFrame(gameLoop);
-}
-
+// Iniciar
 loadMission();
-gameLoop();
+setInterval(update, 20); // 50 cuadros por segundo
