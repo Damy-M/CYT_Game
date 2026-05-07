@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberModal Arcade: Mobile Edition</title>
+    <style>
+        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; --green: #00ff41; --red: #ff3131; }
+        
+        body { 
+            background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; 
+            overflow: hidden; margin: 0; touch-action: none; /* Evita zoom accidental */
+        }
+
+        #battle-field { 
+            width: 100vw; height: 100vh; position: relative; 
+            background: radial-gradient(circle at center, #111122 0%, #050508 100%); 
+        }
+        
+        .invader { 
+            position: absolute; padding: 15px 10px; border: 2px solid; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.9); font-weight: bold; text-transform: uppercase;
+            font-size: 16px; min-width: 70px; text-align: center; z-index: 5;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        #player-ship { 
+            position: absolute; bottom: 80px; width: 0; height: 0; 
+            border-left: 25px solid transparent; border-right: 25px solid transparent;
+            border-bottom: 40px solid #fff; filter: drop-shadow(0 0 15px var(--blue));
+            transform: translateX(-50%); pointer-events: none;
+        }
+
+        #sentence-panel { 
+            position: absolute; top: 110px; width: 100%; text-align: center; 
+            font-size: 24px; padding: 0 15px; box-sizing: border-box; 
+            color: #fff; text-shadow: 0 0 8px var(--pink);
+        }
+
+        .hud { 
+            position: absolute; top: 30px; width: 100%; display: flex; 
+            justify-content: space-around; color: var(--blue); 
+            font-size: 18px; font-weight: bold; font-family: monospace; z-index: 10; 
+        }
+        
+        .overlay { 
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.98); 
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; z-index: 100; text-align: center; padding: 20px;
+        }
+
+        #feedback-report { 
+            width: 90%; max-height: 45vh; overflow-y: auto; background: #000; 
+            padding: 15px; border: 1px solid #333; margin-top: 15px; text-align: left; 
+        }
+        
+        button { 
+            background: linear-gradient(45deg, #9d00ff, var(--pink)); color: white; 
+            border: none; padding: 20px 60px; border-radius: 12px; font-weight: bold; 
+            text-transform: uppercase; font-size: 20px; box-shadow: 0 0 20px var(--pink)55;
+        }
+
+        .hidden { display: none !important; }
+        u { color: var(--pink); text-decoration: underline; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <audio id="snd-bg" loop><source src="wall.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-hit"><source src="shot.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-win"><source src="WIN.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-lose"><source src="Lose.mp3" type="audio/mpeg"></audio>
+
+    <div id="battle-field">
+        <div class="hud">
+            <div>SHIELD: <span id="lives-display" style="color: var(--red);">5/5</span></div>
+            <div>XP: <span id="wins-display">0</span></div>
+        </div>
+        <div id="sentence-panel">INITIALIZING...</div>
+        <div id="player-ship"></div>
+    </div>
+
+    <div id="start-screen" class="overlay">
+        <h1 style="color:var(--blue); font-size: 40px; margin: 0;">CYBERMODAL</h1>
+        <p style="color:var(--pink); letter-spacing: 3px; margin-bottom: 30px;">MOBILE MISSION</p>
+        <p style="font-size: 1rem; margin-bottom: 30px;">Toca las palabras correctas mientras caen. ¡Usa tu pulgar para mover la nave!</p>
+        <button id="btn-start">CONNECT</button>
+    </div>
+
+    <div id="end-screen" class="overlay hidden">
+        <h1 id="end-status" style="font-size: 30px;">MISSION ENDED</h1>
+        <div id="feedback-report"></div>
+        <button onclick="location.reload()">RETRY</button>
+    </div>
+
+    <script src="data.js"></script>
+    <script>
+        const field = document.getElementById('battle-field');
+        const ship = document.getElementById('player-ship');
+        const sentenceEl = document.getElementById('sentence-panel');
+        
+        const audios = {
+            bg: document.getElementById('snd-bg'), hit: document.getElementById('snd-hit'),
+            win: document.getElementById('snd-win'), lose: document.getElementById('snd-lose')
+        };
+
+        const neonColors = ['#00d4ff', '#ff00ff', '#00ff41', '#ff3131', '#ffff00'];
+        let lives = 5, wins = 0, currentRound = 0, gameActive = false, invaders = [];
+        let sessionData = [], mistakesLog = [];
+
+        function initGame() {
+            sessionData = [...db].sort(() => 0.5 - Math.random());
+            lives = 5; wins = 0; currentRound = 0; mistakesLog = [];
+            document.getElementById('lives-display').innerText = `${lives}/5`;
+            document.getElementById('wins-display').innerText = wins;
+            gameActive = true;
+            audios.bg.volume = 0.4; audios.bg.play().catch(()=>{});
+            loadLevel();
+            requestAnimationFrame(updateLoop);
+        }
+
+        function loadLevel() {
+            if (currentRound >= sessionData.length || lives <= 0) { endGame(lives > 0); return; }
+            sentenceEl.innerHTML = sessionData[currentRound].s;
+            createInvaders();
+        }
+
+        function createInvaders() {
+            invaders.forEach(i => i.el.remove());
+            invaders = [];
+            const correctWord = sessionData[currentRound].ans;
+            // Solo 4 opciones en móvil para que no se amontonen
+            let pool = [correctWord, ...wordsPool.filter(w => w !== correctWord).sort(() => 0.5 - Math.random()).slice(0, 3)];
+            pool.sort(() => 0.5 - Math.random());
+
+            pool.forEach((word, i) => {
+                const el = document.createElement('div');
+                el.className = 'invader';
+                el.innerText = word;
+                const color = neonColors[i % neonColors.length];
+                el.style.color = color; el.style.borderColor = color;
+                el.style.left = (5 + (i * 24)) + "%"; // Espaciado para pulgares
+                el.style.top = "-80px";
+                el.onclick = (e) => { e.stopPropagation(); checkWord(word, el); };
+                field.appendChild(el);
+                invaders.push({ el, y: -80, speed: 1.2 + (Math.random() * 0.8) });
+            });
+        }
+
+        function checkWord(picked, el) {
+            if (!gameActive) return;
+            const question = sessionData[currentRound];
+            if (picked === question.ans) {
+                audios.hit.currentTime = 0; audios.hit.play().catch(()=>{});
+                currentRound++; wins += 100;
+                document.getElementById('wins-display').innerText = wins;
+                loadLevel();
+            } else {
+                if (!mistakesLog.some(m => m.s === question.s)) mistakesLog.push(question);
+                lives--;
+                if(window.navigator.vibrate) window.navigator.vibrate(100);
+                audios.lose.currentTime = 0; audios.lose.play().catch(()=>{});
+                document.getElementById('lives-display').innerText = `${lives}/5`;
+                el.style.opacity = "0.2"; el.style.pointerEvents = "none";
+                if (lives <= 0) endGame(false);
+            }
+        }
+
+        function updateLoop() {
+            if (!gameActive) return;
+            invaders.forEach(inv => {
+                inv.y += inv.speed;
+                inv.el.style.top = inv.y + "px";
+                if (inv.y > window.innerHeight) inv.y = -80;
+            });
+            requestAnimationFrame(updateLoop);
+        }
+
+        // CONTROL TÁCTIL PARA LA NAVE
+        field.addEventListener('touchmove', (e) => {
+            if (gameActive) {
+                const touchX = e.touches[0].clientX;
+                ship.style.left = touchX + "px";
+            }
+        }, { passive: true });
+
+        function endGame(isWin) {
+            gameActive = false; audios.bg.pause();
+            if(isWin) audios.win.play().catch(()=>{});
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('end-status').innerText = isWin ? "TRANSMISSION SECURED" : "UPLINK LOST";
+            document.getElementById('end-status').style.color = isWin ? "var(--green)" : "var(--red)";
+            
+            const report = document.getElementById('feedback-report');
+            if (mistakesLog.length > 0) {
+                let html = "<h3>DEBRIEFING:</h3><ol>";
+                mistakesLog.forEach(m => {
+                    html += `<li>${m.s.replace("____", "<u>" + m.ans + "</u>")}<br><small style='color:var(--blue)'>${m.loss}</small></li>`;
+                });
+                report.innerHTML = html + "</ol>";
+            } else { report.innerHTML = "<h3>PERFECT ACCURACY!</h3>"; }
+        }
+
+        document.getElementById('btn-start').onclick = () => {
+            document.getElementById('start-screen').classList.add('hidden');
+            initGame();
+        };
+    </script>
+</body>
+</html>
