@@ -1,20 +1,36 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Arcade Space</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <title>MODAL DEFENSE - CYBERPUNK</title>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; height: 100vh; }
-        .hud { display: flex; justify-content: space-around; padding: 10px; background: #111; border-bottom: 2px solid #00d4ff; }
-        #sentence { padding: 15px; text-align: center; font-size: 1.2rem; color: #00d4ff; min-height: 40px; font-weight: bold; }
-        #game-area { height: calc(100vh - 120px); position: relative; width: 100%; }
-        .invader { position: absolute; padding: 10px 15px; border: 2px solid; border-radius: 8px; font-weight: bold; font-size: 0.8rem; background: rgba(0,0,0,0.8); }
+        :root { --p: #00ff41; --s: #ff00ff; --t: #00d4ff; }
+        body { margin: 0; background: #020205; color: white; font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
+        #start-screen { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 4px double var(--p); margin: 10px; }
+        .hud { display: flex; justify-content: space-around; padding: 10px; background: #000; border-bottom: 2px solid var(--t); box-shadow: 0 0 15px var(--t); }
+        #sentence-area { padding: 15px; text-align: center; font-size: 1.2rem; color: var(--p); text-shadow: 0 0 10px var(--p); min-height: 40px; }
+        #game-area { height: calc(100vh - 120px); position: relative; width: 100%; perspective: 1000px; }
+        .invader { position: absolute; padding: 10px 15px; border: 2px solid; border-radius: 4px; font-weight: bold; background: rgba(0,0,0,0.8); cursor: pointer; box-shadow: 0 0 10px inset; transition: 0.2s; white-space: nowrap; }
+        .fb { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); font-size: 3rem; font-weight: bold; z-index: 500; pointer-events: none; }
+        .glitch { animation: glitch 0.3s infinite; }
+        @keyframes glitch { 0% { transform: translate(2px,0); } 50% { transform: translate(-2px,0); } 100% { transform: translate(0,0); } }
+        .btn-start { padding: 15px 40px; background: transparent; border: 2px solid var(--s); color: var(--s); font-weight: bold; font-size: 1.5rem; cursor: pointer; margin-top: 20px; box-shadow: 0 0 15px var(--s); }
     </style>
 </head>
 <body>
-    <div class="hud"><div>SCORE: <span id="score">0</span></div><div>RD: <span id="rd">1</span>/5</div></div>
-    <div id="sentence">TOCA UNA NAVE PARA INICIAR</div>
+    <div id="start-screen">
+        <h1 class="glitch" style="color:var(--t)">MODAL DEFENSE 2026</h1>
+        <p>MISSION: COMPLETE THE SENTENCE<br>DEFEND THE GRID - 7 LIVES<br>ROTATE DEVICE TO LANDSCAPE</p>
+        <button class="btn-start" onclick="startGame()">INITIALIZE SYSTEM</button>
+    </div>
+
+    <div class="hud">
+        <div>SCORE: <span id="score">0</span></div>
+        <div>HEALTH: <span id="lives">7</span></div>
+        <div id="progress">RD: 1/10</div>
+    </div>
+    <div id="sentence-area">SYSTEM IDLE...</div>
     <div id="game-area"></div>
 
     <audio id="m_bg" src="space_bg.mp3" loop></audio>
@@ -23,44 +39,83 @@
     <audio id="m_lose" src="space_lose.mp3"></audio>
 
     <script>
-        const db = [
-            { s: "You ________ smoke in class.", opts: ["mustn't", "can", "should", "have", "do", "is"], ans: "mustn't" },
+        const fullDB = [
+            { s: "You ________ smoke here.", opts: ["mustn't", "can", "should", "have", "do", "is"], ans: "mustn't" },
             { s: "I ________ swim when I was 5.", opts: ["could", "must", "can", "should", "may", "did"], ans: "could" },
-            { s: "We ________ go now, it's late.", opts: ["should", "can", "has", "are", "do", "might"], ans: "should" }
+            { s: "We ________ go, it's late.", opts: ["should", "has", "are", "do", "might", "will"], ans: "should" },
+            { s: "________ I come in?", opts: ["may", "must", "do", "has", "is", "am"], ans: "may" },
+            { s: "She ________ be at home.", opts: ["might", "has", "is", "does", "have", "been"], ans: "might" },
+            { s: "You ________ drink water.", opts: ["must", "does", "are", "have", "doing", "was"], ans: "must" },
+            { s: "They ________ speak French.", opts: ["can", "has", "is", "are", "do", "been"], ans: "can" },
+            { s: "I ________ help you.", opts: ["will", "am", "do", "does", "has", "been"], ans: "will" },
+            { s: "We ________ leave now.", opts: ["ought to", "has", "is", "are", "been", "was"], ans: "ought to" },
+            { s: "You ________ not steal.", opts: ["shall", "does", "are", "am", "has", "is"], ans: "shall" }
+            // Nota: He puesto 10 aquí por espacio, pero el código elige 10 al azar de tu pool
         ];
-        let score = 0, rd = 1, audio = false;
+
+        let gameDB = [], score = 0, lives = 7, rd = 0, active = false;
         const area = document.getElementById("game-area");
 
-        function load() {
-            if(rd > db.length) { document.getElementById("m_win").play(); alert("¡VICTORIA!"); location.reload(); return; }
-            const m = db[rd-1]; document.getElementById("sentence").innerText = m.s;
-            document.getElementById("rd").innerText = rd;
-            const shuffled = [...m.opts].sort(() => Math.random() - 0.5);
+        function startGame() {
+            document.getElementById("start-screen").style.display = "none";
+            document.getElementById("m_bg").play();
+            gameDB = fullDB.sort(() => 0.5 - Math.random()).slice(0, 10);
+            active = true;
+            nextRound();
+        }
+
+        function nextRound() {
+            if(rd >= 10) return endGame("MISSION ACCOMPLISHED");
             area.innerHTML = "";
+            const m = gameDB[rd];
+            document.getElementById("sentence-area").innerText = m.s;
+            document.getElementById("progress").innerText = `RD: ${rd+1}/10`;
+            
+            const shuffled = [...m.opts].sort(() => Math.random() - 0.5);
             shuffled.forEach((o, i) => {
                 const div = document.createElement("div");
                 div.className = "invader"; div.innerText = o;
-                div.style.left = (i * (area.clientWidth / 6) + 5) + "px";
-                div.style.top = "-50px"; div.style.borderColor = ["#0f0","#f0f","#0cf","#ff0","#f33","#fff"][i];
-                div.onclick = () => { 
-                    if(!audio) { document.getElementById("m_bg").play(); audio = true; }
-                    document.getElementById("m_shoot").currentTime = 0;
-                    document.getElementById("m_shoot").play();
-                    if(o === m.ans) { score += 100; rd++; load(); }
-                    else { score = Math.max(0, score - 50); }
-                    document.getElementById("score").innerText = score;
-                };
+                div.style.left = (i * (area.clientWidth / 6) + 10) + "px";
+                // SALIDA A DESTIEMPO
+                div.style.top = -(Math.random() * 200 + 50) + "px"; 
+                div.style.borderColor = ["#0f0","#f0f","#0cf","#ff0","#f33","#fff"][i];
+                div.onclick = () => check(o === m.ans, div);
                 area.appendChild(div);
             });
         }
+
+        function check(correct, div) {
+            document.getElementById("m_shoot").currentTime = 0;
+            document.getElementById("m_shoot").play();
+            const fb = document.createElement("div"); fb.className = "fb";
+            if(correct) {
+                score += 100; fb.innerText = "CRITICAL HIT!"; fb.style.color = "#0f0";
+                rd++; setTimeout(nextRound, 600);
+            } else {
+                lives--; score = Math.max(0, score-50); fb.innerText = "SYSTEM ERROR"; fb.style.color = "#f00";
+                if(lives <= 0) endGame("SYSTEM OVERLOAD");
+            }
+            area.appendChild(fb);
+            document.getElementById("score").innerText = score;
+            document.getElementById("lives").innerText = lives;
+            setTimeout(() => fb.remove(), 500);
+        }
+
+        function endGame(msg) {
+            active = false; document.getElementById("m_bg").pause();
+            document.getElementById(lives > 0 ? "m_win" : "m_lose").play();
+            alert(msg + "\nFINAL SCORE: " + score);
+            location.reload();
+        }
+
         setInterval(() => {
+            if(!active) return;
             document.querySelectorAll(".invader").forEach(inv => {
-                let top = parseInt(inv.style.top) + 2;
+                let top = parseFloat(inv.style.top) + (1.2 + rd*0.1);
                 inv.style.top = top + "px";
-                if(top > area.clientHeight - 40) { document.getElementById("m_lose").play(); alert("GAME OVER"); location.reload(); }
+                if(top > area.clientHeight) { lives--; document.getElementById("lives").innerText = lives; inv.remove(); if(lives<=0) endGame("GRID LOST"); }
             });
-        }, 35);
-        load();
+        }, 30);
     </script>
 </body>
 </html>
