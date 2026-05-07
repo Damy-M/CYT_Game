@@ -3,30 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYT: Cybermodal Learning Hub</title>
+    <title>CYT Arcade: Mission Control</title>
     <style>
-        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; }
-        body { 
-            background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            min-height: 100vh; margin: 0;
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff41;
+            --dark-bg: #050508;
         }
-        h1 { color: var(--blue); text-shadow: 0 0 15px var(--blue); margin-bottom: 40px; }
-        .menu { display: grid; gap: 20px; width: 90%; max-width: 400px; }
-        .card { 
-            background: #111; border: 2px solid var(--pink); padding: 25px; 
-            border-radius: 15px; text-decoration: none; color: white;
-            text-align: center; font-weight: bold; transition: 0.3s;
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .card:active { transform: scale(0.95); background: var(--pink); color: #000; }
+
+        /* Efecto de líneas de escaneo estilo retro-arcade */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .header {
+            margin-top: 40px;
+            text-align: center;
+            animation: flicker 2s infinite;
+        }
+
+        /* Contenedor del Logo */
+        .logo-img {
+            max-width: 280px;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-pink);
+            border: 2px solid var(--neon-blue);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--neon-blue);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px var(--neon-blue);
+            margin-bottom: 50px;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            width: 90%;
+            max-width: 450px;
+            z-index: 10;
+        }
+
+        .cyber-card {
+            position: relative;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--neon-blue);
+            padding: 30px;
+            text-decoration: none;
+            color: white;
+            text-align: center;
+            transition: 0.4s;
+            overflow: hidden;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+
+        .cyber-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .cyber-card:hover::before {
+            left: 100%;
+        }
+
+        .cyber-card:hover {
+            transform: scale(1.05);
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 30px var(--neon-blue);
+            border-color: white;
+        }
+
+        .cyber-card h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .cyber-card span {
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        /* Animación de parpadeo para el logo */
+        @keyframes flicker {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 1; }
+            20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.4; }
+        }
+
+        .footer {
+            margin-top: auto;
+            padding: 30px;
+            font-size: 0.7rem;
+            color: #444;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
-    <h1>CYT: MISSION CONTROL</h1>
-    <div class="menu">
-        <a href="index_space.html" class="card">MISSION 01: ARCADE SPACE</a>
-        
-        <a href="Grammar%20Snake/index.html" class="card">MISSION 02: GRAMMAR SNAKE</a>
+
+    <div class="header">
+        <img src="IMG_20260505_123303.jpg" alt="CYT Logo" class="logo-img">
+        <h1>Mission Select</h1>
     </div>
+
+    <div class="menu-container">
+        <a href="Arcade-Modal-Space/index.html" class="cyber-card">
+            <span>MODAL VERBS DEFENSE</span>
+            <h2>MISSION: SPACE ARCADE</h2>
+        </a>
+
+        <a href="Grammar%20snake/index.html" class="cyber-card" style="border-color: var(--neon-pink);">
+            <span>SENTENCE STRUCTURE</span>
+            <h2 style="text-shadow: 0 0 5px var(--neon-pink);">MISSION: GRAMMAR SNAKE</h2>
+        </a>
+    </div>
+
+    <div class="footer">UDLA - TRADUCCIÓN E INTERPRETACIÓN 2026</div>
+
 </body>
 </html>
