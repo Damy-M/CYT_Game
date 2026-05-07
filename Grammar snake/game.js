@@ -7,7 +7,6 @@ let snake = [{x: 100, y: 100}, {x: 80, y: 100}, {x: 60, y: 100}];
 let dir = {x: 20, y: 0}, nextDir = {x: 20, y: 0};
 let score = 0, lives = 5, currentWordIdx = 0, missionIdx = 0;
 let foods = [], gameActive = true;
-
 const box = 20;
 
 function initLevel() {
@@ -16,9 +15,25 @@ function initLevel() {
         spawnFoods();
         renderMission();
     } else {
-        alert("¡FELICIDADES! COMPLETADO.");
-        location.reload();
+        showFeedback("MISSION ACCOMPLISHED!", "#00ff41");
+        setTimeout(() => location.reload(), 2000);
     }
+}
+
+function showFeedback(text, color) {
+    const fb = document.createElement('div');
+    fb.innerText = text;
+    fb.style.position = 'absolute';
+    fb.style.top = '50%';
+    fb.style.left = '50%';
+    fb.style.transform = 'translate(-50%, -50%)';
+    fb.style.color = color;
+    fb.style.fontSize = '2rem';
+    fb.style.fontWeight = 'bold';
+    fb.style.zIndex = '1000';
+    fb.style.textShadow = `0 0 10px ${color}`;
+    container.appendChild(fb);
+    setTimeout(() => fb.remove(), 1000);
 }
 
 function spawnFoods() {
@@ -55,16 +70,24 @@ function update() {
     dir = nextDir;
     const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-    // Efecto túnel
-    if (head.x < 0) head.x = Math.floor(container.clientWidth/box)*box - box;
-    if (head.x >= container.clientWidth) head.x = 0;
-    if (head.y < 0) head.y = Math.floor(container.clientHeight/box)*box - box;
-    if (head.y >= container.clientHeight) head.y = 0;
+    // MUERTE POR PARED (Regla estricta)
+    if (head.x < 0 || head.x >= container.clientWidth || head.y < 0 || head.y >= container.clientHeight) {
+        endGame("CRASHED INTO BORDER!");
+        return;
+    }
+
+    // Muerte por morderse a sí misma
+    if (snake.some(p => p.x === head.x && p.y === head.y)) {
+        endGame("SELF-DESTRUCTION!");
+        return;
+    }
 
     let ate = false;
     foods.forEach((f, i) => {
         if (head.x === f.x && head.y === f.y) {
             if (f.isCorrect) {
+                document.getElementById('snd-eat').play();
+                showFeedback("CORRECT!", "#00d4ff");
                 score += 150;
                 currentWordIdx++;
                 if (currentWordIdx >= snakeMissions[missionIdx].words.length) {
@@ -74,9 +97,10 @@ function update() {
                     spawnFoods();
                 }
             } else {
+                document.getElementById('snd-lose').play();
+                showFeedback("WRONG WORD!", "#ff3131");
                 lives--;
-                score = Math.max(0, score - 50);
-                if (lives <= 0) { gameActive = false; alert("GAME OVER"); location.reload(); }
+                if (lives <= 0) endGame("SYSTEM FAILURE");
                 spawnFoods();
             }
             ate = true;
@@ -99,13 +123,14 @@ function draw() {
     });
     scoreEl.innerText = score;
     livesEl.innerText = lives;
+    renderMission();
 }
 
-function renderMission() {
-    const m = snakeMissions[missionIdx];
-    missionEl.innerHTML = m.words.map((w, i) => 
-        `<span class="word-box ${i < currentWordIdx ? 'found' : ''}">${i < currentWordIdx ? w : '____'}</span>`
-    ).join('');
+function endGame(msg) {
+    gameActive = false;
+    document.getElementById('snd-lose').play();
+    showFeedback(msg, "#ff3131");
+    setTimeout(() => location.reload(), 2000);
 }
 
 initLevel();
