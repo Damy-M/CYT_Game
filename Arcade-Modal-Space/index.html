@@ -1,71 +1,122 @@
-// Arcade Space - Modal Defense Logic
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const scoreEl = document.getElementById("score");
-const roundEl = document.getElementById("round-counter");
-const sentenceEl = document.getElementById("sentence-display");
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CYT: Modal Defense</title>
+    <style>
+        :root {
+            --blue: #00d4ff;
+            --pink: #ff00ff;
+            --bg: #050508;
+        }
 
-// Configuración de pantalla
-canvas.width = 480;
-canvas.height = 550;
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-// VARIABLES DE JUEGO
-let score = 0;
-let currentRound = 1;
-// Detecta automáticamente cuántas frases hay en tu data.js
-const totalRounds = (typeof db !== 'undefined') ? db.length : 10;
+        /* HUD - Barra Superior */
+        .hud {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 2px solid var(--blue);
+            box-shadow: 0 0 15px var(--blue);
+            z-index: 10;
+        }
 
-let player = { x: canvas.width / 2 - 25, y: canvas.height - 70, w: 50, h: 50 };
-let bullets = [];
-let invaders = [];
-let gameActive = true;
+        .hud-item {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--blue);
+            text-transform: uppercase;
+        }
 
-// 1. ACTUALIZAR TEXTOS EN PANTALLA
-function updateHUD() {
-    scoreEl.innerText = score;
-    // Esto actualiza el RD: 1/15
-    if (roundEl) {
-        roundEl.innerText = `RD: ${currentRound}/${totalRounds}`;
-    }
-}
+        /* Contador de Rondas destacado en Rosa */
+        #round-counter {
+            color: var(--pink);
+            text-shadow: 0 0 8px var(--pink);
+        }
 
-// 2. CARGAR MISIÓN ACTUAL
-function loadMission() {
-    if (typeof db !== 'undefined' && db[currentRound - 1]) {
-        const mission = db[currentRound - 1];
-        sentenceEl.innerText = mission.s; // Muestra la oración con el espacio
-        spawnInvaders(mission.options, mission.ans);
-    }
-}
+        /* Pantalla de la Oración */
+        #sentence-display {
+            padding: 20px;
+            text-align: center;
+            font-size: 1.4rem;
+            background: rgba(0, 212, 255, 0.1);
+            color: #fff;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #222;
+        }
 
-function spawnInvaders(options, answer) {
-    invaders = [];
-    const spacing = canvas.width / options.length;
-    options.forEach((opt, i) => {
-        invaders.push({
-            x: (i * spacing) + 10,
-            y: -50, // Aparecen desde arriba
-            w: spacing - 20,
-            h: 40,
-            text: opt,
-            isCorrect: opt === answer,
-            speed: 0.8 + (currentRound * 0.1) // Aumenta velocidad cada nivel
-        });
-    });
-}
+        /* Área de Juego */
+        #game-container {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, #111 0%, #000 100%);
+        }
 
-// 3. LÓGICA DE MOVIMIENTO Y COLISIONES
-function update() {
-    if (!gameActive) return;
+        canvas {
+            border: 1px solid #333;
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
 
-    // Balas
-    bullets.forEach((b, bi) => {
-        b.y -= 8;
-        invaders.forEach((inv, ii) => {
-            if (b.x > inv.x && b.x < inv.x + inv.w && b.y > inv.y && b.y < inv.y + inv.h) {
-                if (inv.isCorrect) {
-                    score += 100;
-                    bullets.splice(bi, 1);
-                    nextLevel();
-                } else {
-                    score = Math.max(0, score - 50); //
+        /* Botón Volver al Menú */
+        .back-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background: transparent;
+            border: 1px solid var(--pink);
+            color: var(--pink);
+            text-decoration: none;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            transition: 0.3s;
+            z-index: 20;
+        }
+
+        .back-btn:hover {
+            background: var(--pink);
+            color: black;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hud">
+        <div class="hud-item">SCORE: <span id="score">0</span></div>
+        <div class="hud-item" id="round-counter">RD: 1/15</div>
+    </div>
+
+    <div id="sentence-display">CARGANDO SISTEMA DE DEFENSA...</div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <a href="../index.html" class="back-btn">◀ SALIR AL HUB</a>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+
+</body>
+</html>
