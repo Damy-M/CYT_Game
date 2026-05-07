@@ -2,102 +2,65 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>Arcade Modal Defense</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arcade Space</title>
     <style>
-        body { margin: 0; background: #050508; color: white; font-family: sans-serif; overflow: hidden; height: 100vh; }
-        .hud { display: flex; justify-content: space-between; padding: 10px 30px; background: #000; border-bottom: 2px solid #00d4ff; }
-        #sentence-display { padding: 10px; text-align: center; font-size: 1.3rem; color: #00d4ff; min-height: 40px; font-weight: bold; }
-        #game-area { height: calc(100vh - 100px); position: relative; background: #000; }
-        .invader { position: absolute; padding: 6px 12px; background: rgba(0,0,0,0.8); border: 2px solid; border-radius: 6px; font-weight: bold; font-size: 0.8rem; color: white; text-transform: uppercase; white-space: nowrap; z-index: 10; }
-        .fb-text { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; font-weight: bold; pointer-events: none; z-index: 100; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; height: 100vh; }
+        .hud { display: flex; justify-content: space-around; padding: 10px; background: #111; border-bottom: 2px solid #00d4ff; }
+        #sentence { padding: 15px; text-align: center; font-size: 1.2rem; color: #00d4ff; min-height: 40px; font-weight: bold; }
+        #game-area { height: calc(100vh - 120px); position: relative; width: 100%; }
+        .invader { position: absolute; padding: 10px 15px; border: 2px solid; border-radius: 8px; font-weight: bold; font-size: 0.8rem; background: rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
-    <div class="hud">
-        <div>SCORE: <span id="score">0</span></div>
-        <div id="round-counter">RD: 1/15</div>
-    </div>
-    <div id="sentence-display">TOCA PARA EMPEZAR</div>
+    <div class="hud"><div>SCORE: <span id="score">0</span></div><div>RD: <span id="rd">1</span>/5</div></div>
+    <div id="sentence">TOCA UNA NAVE PARA INICIAR</div>
     <div id="game-area"></div>
 
-    <audio id="fondo-music" src="fondo.mp3" loop></audio>
-    <audio id="snd-eat" src="WIN.mp3"></audio>
-    <audio id="snd-lose" src="Lose.mp3"></audio>
+    <audio id="m_bg" src="space_bg.mp3" loop></audio>
+    <audio id="m_shoot" src="space_shoot.mp3"></audio>
+    <audio id="m_win" src="space_win.mp3"></audio>
+    <audio id="m_lose" src="space_lose.mp3"></audio>
 
     <script>
         const db = [
-            { s: "You ________ smoke in the hospital.", options: ["mustn't", "don't have to", "shouldn't", "can't", "won't", "haven't"], ans: "mustn't" },
-            { s: "I ________ swim when I was five.", options: ["could", "can", "must", "should", "might", "have"], ans: "could" },
-            { s: "It's raining. You ________ take an umbrella.", options: ["should", "ought", "must", "can", "may", "would"], ans: "should" },
-            { s: "________ I use your phone?", options: ["May", "Must", "Should", "Will", "Has", "Does"], ans: "May" },
-            { s: "We ________ hurry, the train leaves in 5 mins.", options: ["had better", "would", "have you", "is it", "did", "was"], ans: "had better" }
+            { s: "You ________ smoke in class.", opts: ["mustn't", "can", "should", "have", "do", "is"], ans: "mustn't" },
+            { s: "I ________ swim when I was 5.", opts: ["could", "must", "can", "should", "may", "did"], ans: "could" },
+            { s: "We ________ go now, it's late.", opts: ["should", "can", "has", "are", "do", "might"], ans: "should" }
         ];
-
+        let score = 0, rd = 1, audio = false;
         const area = document.getElementById("game-area");
-        const scoreEl = document.getElementById("score");
-        const roundEl = document.getElementById("round-counter");
-        const sentenceEl = document.getElementById("sentence-display");
-        const colors = ["#00ff41", "#ff00ff", "#00d4ff", "#ffff00", "#ff3131", "#ffffff"];
-        
-        let score = 0, currentRound = 1, gameActive = true, invaders = [], audioStarted = false;
 
-        function loadMission() {
-            if (currentRound > db.length) { alert("¡VICTORIA!"); location.reload(); return; }
-            const m = db[currentRound - 1];
-            sentenceEl.innerText = m.s;
-            roundEl.innerText = `RD: ${currentRound}/${db.length}`;
-            const shuffled = [...m.options].sort(() => Math.random() - 0.5);
-            spawnInvaders(shuffled, m.ans);
-        }
-
-        function spawnInvaders(opts, ans) {
-            document.querySelectorAll('.invader').forEach(i => i.remove());
-            invaders = [];
-            const spacing = area.clientWidth / opts.length;
-            opts.forEach((opt, i) => {
-                const div = document.createElement('div');
-                div.className = 'invader';
-                div.innerText = opt;
-                div.style.cssText = `top:-50px; left:${i * spacing + 10}px; border-color:${colors[i % colors.length]};`;
+        function load() {
+            if(rd > db.length) { document.getElementById("m_win").play(); alert("¡VICTORIA!"); location.reload(); return; }
+            const m = db[rd-1]; document.getElementById("sentence").innerText = m.s;
+            document.getElementById("rd").innerText = rd;
+            const shuffled = [...m.opts].sort(() => Math.random() - 0.5);
+            area.innerHTML = "";
+            shuffled.forEach((o, i) => {
+                const div = document.createElement("div");
+                div.className = "invader"; div.innerText = o;
+                div.style.left = (i * (area.clientWidth / 6) + 5) + "px";
+                div.style.top = "-50px"; div.style.borderColor = ["#0f0","#f0f","#0cf","#ff0","#f33","#fff"][i];
                 div.onclick = () => { 
-                    if(!audioStarted) { document.getElementById('fondo-music').play(); audioStarted=true; }
-                    checkAnswer(opt === ans, div); 
+                    if(!audio) { document.getElementById("m_bg").play(); audio = true; }
+                    document.getElementById("m_shoot").currentTime = 0;
+                    document.getElementById("m_shoot").play();
+                    if(o === m.ans) { score += 100; rd++; load(); }
+                    else { score = Math.max(0, score - 50); }
+                    document.getElementById("score").innerText = score;
                 };
                 area.appendChild(div);
-                invaders.push({ div, y: -50, speed: 1.3 + (currentRound * 0.1) });
             });
         }
-
-        function checkAnswer(isCorrect, div) {
-            if (!gameActive) return;
-            document.querySelectorAll('.fb-text').forEach(f => f.remove());
-            const fb = document.createElement('div');
-            fb.className = 'fb-text';
-            if (isCorrect) {
-                document.getElementById('snd-eat').play();
-                score += 100; fb.innerText = "¡EXCELENTE!"; fb.style.color = "#00ff41";
-                gameActive = false;
-                setTimeout(() => { fb.remove(); gameActive = true; currentRound++; loadMission(); }, 800);
-            } else {
-                document.getElementById('snd-lose').play();
-                score = Math.max(0, score - 50); fb.innerText = "¡ERROR!"; fb.style.color = "#ff3131";
-                setTimeout(() => fb.remove(), 600);
-            }
-            area.appendChild(fb);
-            scoreEl.innerText = score;
-        }
-
-        function update() {
-            if (!gameActive) return;
-            invaders.forEach(inv => {
-                inv.y += inv.speed;
-                inv.div.style.top = inv.y + "px";
-                if (inv.y > area.clientHeight - 40) { alert("GAME OVER"); location.reload(); }
+        setInterval(() => {
+            document.querySelectorAll(".invader").forEach(inv => {
+                let top = parseInt(inv.style.top) + 2;
+                inv.style.top = top + "px";
+                if(top > area.clientHeight - 40) { document.getElementById("m_lose").play(); alert("GAME OVER"); location.reload(); }
             });
-        }
-        loadMission();
-        setInterval(update, 20);
+        }, 35);
+        load();
     </script>
 </body>
 </html>
