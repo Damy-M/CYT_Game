@@ -3,85 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CYT: Grammar Snake Mobile</title>
+    <title>CYT: Snake Mobile</title>
     <style>
-        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; }
+        body { margin: 0; background: #050508; color: white; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        .hud { display: flex; justify-content: space-around; padding: 10px; border-bottom: 2px solid #ff00ff; font-weight: bold; }
+        #mission-control { padding: 15px; text-align: center; font-size: 1.2rem; min-height: 40px; border-bottom: 1px solid #333; }
+        .slot { border-bottom: 2px solid #00d4ff; margin: 0 5px; padding: 0 5px; }
+        #game-board { flex-grow: 1; position: relative; background: #000; margin: 10px; border: 1px solid #222; }
         
-        body { 
-            margin: 0; background: var(--bg); color: white; 
-            font-family: 'Segoe UI', Courier, monospace; overflow: hidden; 
-            display: flex; flex-direction: column; height: 100vh; 
-        }
-
-        /* Barra de estado superior */
-        .hud {
-            display: flex; justify-content: space-around; align-items: center;
-            padding: 10px; background: rgba(0, 0, 0, 0.9);
-            border-bottom: 2px solid var(--pink); box-shadow: 0 0 10px var(--pink);
-        }
-        .hud-item { font-size: 0.9rem; font-weight: bold; color: var(--pink); }
-
-        /* Frase a completar */
-        #mission-control {
-            padding: 15px; text-align: center; font-size: 1.1rem;
-            background: rgba(255, 0, 255, 0.05); min-height: 40px;
-            color: #fff; border-bottom: 1px solid #333;
-        }
-        .slot { border-bottom: 2px solid var(--blue); margin: 0 3px; padding: 0 5px; display: inline-block; }
-        .slot.done { color: var(--blue); border-bottom-color: transparent; }
-
-        /* Área de juego */
-        #game-board {
-            flex-grow: 1; position: relative; background: #000;
-            margin: 5px; border: 1px solid #222; overflow: hidden;
-        }
-
-        .snake-part { position: absolute; width: 18px; height: 18px; border-radius: 3px; }
-        .food-item { 
-            position: absolute; padding: 4px 8px; background: rgba(0,0,0,0.8);
-            border: 1px solid currentColor; font-weight: bold; font-size: 0.8rem;
-            border-radius: 4px; z-index: 5; white-space: nowrap;
-        }
-
-        /* CONTROLES MÓVILES (DPAD) */
-        .controls {
-            display: grid;
-            grid-template-areas: 
-                ". up ."
-                "left . right"
-                ". down .";
-            gap: 10px;
-            padding: 20px;
-            justify-content: center;
-            background: #0a0a0c;
-        }
-        .btn {
-            width: 65px; height: 65px; background: rgba(255, 0, 255, 0.1);
-            border: 2px solid var(--pink); color: white; border-radius: 50%;
-            font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
-            touch-action: manipulation;
-        }
-        .btn:active { background: var(--pink); color: black; }
+        /* BOTONES DE CONTROL */
+        .controls { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 10px; padding: 20px; justify-content: center; background: #000; }
+        .btn { width: 60px; height: 60px; background: rgba(255, 0, 255, 0.2); border: 2px solid #ff00ff; color: white; border-radius: 50%; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
         .up { grid-area: up; } .left { grid-area: left; } .right { grid-area: right; } .down { grid-area: down; }
-
-        .back-btn {
-            position: absolute; top: 70px; right: 10px;
-            padding: 5px 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--blue);
-            color: var(--blue); text-decoration: none; font-size: 0.7rem; z-index: 20;
-        }
+        
+        .snake-part { position: absolute; width: 20px; height: 20px; background: #00d4ff; }
+        .food-item { position: absolute; padding: 5px; border: 1px solid #00ff41; color: #00ff41; background: rgba(0,0,0,0.8); font-size: 0.8rem; z-index: 10; white-space: nowrap; }
     </style>
 </head>
 <body>
-
     <div class="hud">
-        <div class="hud-item">PTS: <span id="score-val">0</span></div>
-        <div class="hud-item">HP: <span id="shield-val">5/5</span></div>
+        <div>SCORE: <span id="score-val">0</span></div>
+        <div>HP: <span id="shield-val">5/5</span></div>
     </div>
-
     <div id="mission-control"></div>
-
     <div id="game-board"></div>
-
+    
     <div class="controls">
         <button class="btn up" onclick="setDir(0, -20)">▲</button>
         <button class="btn left" onclick="setDir(-20, 0)">◀</button>
@@ -89,21 +35,14 @@
         <button class="btn down" onclick="setDir(0, 20)">▼</button>
     </div>
 
-    <a href="../index.html" class="back-btn">MENU</a>
-
-    <audio id="snd-eat" src="eat.mp3"></audio>
-    <audio id="snd-win" src="win.mp3"></audio>
-    <audio id="snd-lose" src="lose.mp3"></audio>
-
     <script src="data.js"></script>
     <script src="game.js"></script>
-
     <script>
-        // Función para los botones táctiles
         function setDir(x, y) {
-            // Evitar que la serpiente se mueva hacia atrás
-            if (x !== 0 && dir.x === 0) nextDir = {x, y: 0};
-            if (y !== 0 && dir.y === 0) nextDir = {x: 0, y};
+            if (typeof nextDir !== 'undefined') {
+                if (x !== 0 && dir.x === 0) nextDir = {x, y: 0};
+                if (y !== 0 && dir.y === 0) nextDir = {x: 0, y};
+            }
         }
     </script>
 </body>
