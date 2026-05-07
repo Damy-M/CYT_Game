@@ -2,109 +2,82 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>Grammar Snake Landscape</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grammar Snake</title>
     <style>
-        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        .hud { display: flex; justify-content: space-around; padding: 10px; background: #111; border-bottom: 2px solid #ff00ff; z-index: 100; }
-        #game-container { flex-grow: 1; position: relative; border: 2px solid #222; margin: 5px; overflow: hidden; background: #050505; }
-        .snake-part { position: absolute; width: 18px; height: 18px; border-radius: 4px; z-index: 20; box-shadow: 0 0 8px #00ff41; }
-        .food { position: absolute; padding: 5px 10px; background: rgba(0,0,0,0.8); border: 1px solid #ff00ff; border-radius: 5px; font-size: 0.8rem; z-index: 10; color: white; transform: translate(-50%, -50%); }
-        /* CONTROLES A LOS LADOS */
-        .ctrl-box { position: absolute; bottom: 10px; width: 140px; height: 140px; display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 5px; z-index: 200; }
-        .left-side { left: 10px; }
-        .btn { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #ff00ff; background: rgba(255,255,255,0.1); color: white; font-weight: bold; }
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; overflow: hidden; height: 100vh; }
+        .hud { display: flex; justify-content: space-around; padding: 10px; background: #111; border-bottom: 2px solid #f0f; }
+        #game-box { position: relative; width: 100vw; height: 55vh; background: #050505; }
+        .snake { position: absolute; width: 18px; height: 18px; border-radius: 4px; background: #fff; box-shadow: 0 0 10px #0f0; z-index: 10; }
+        .food { position: absolute; padding: 6px; border: 1px solid #f0f; border-radius: 5px; font-size: 0.8rem; background: #000; color: white; z-index: 5; }
+        .controls { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 8px; justify-content: center; padding: 10px; }
+        .btn { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #f0f; background: #111; color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="hud">
-        <div>SCORE: <span id="score">0</span></div>
-        <div id="mission-text">TOCA UNA FLECHA</div>
-        <div>HP: <span id="lives">5</span></div>
-    </div>
-    <div id="game-container"></div>
-    
-    <div class="ctrl-box left-side">
-        <button class="btn" style="grid-area:up" onclick="changeDir(0,-20)">▲</button>
-        <button class="btn" style="grid-area:left" onclick="changeDir(-20,0)">◀</button>
-        <button class="btn" style="grid-area:right" onclick="changeDir(20,0)">▶</button>
-        <button class="btn" style="grid-area:down" onclick="changeDir(0,20)">▼</button>
+    <div class="hud"><div>SCORE: <span id="score">0</span></div><div id="m-text">I ___ STUDYING</div></div>
+    <div id="game-box"></div>
+    <div class="controls">
+        <button class="btn" style="grid-area:up" onclick="move(0,-20)">▲</button>
+        <button class="btn" style="grid-area:left" onclick="move(-20,0)">◀</button>
+        <button class="btn" style="grid-area:right" onclick="move(20,0)">▶</button>
+        <button class="btn" style="grid-area:down" onclick="move(0,20)">▼</button>
     </div>
 
-    <audio id="fondo-music" src="fondo.mp3" loop></audio>
-    <audio id="snd-eat" src="jump.mp3"></audio>
+    <audio id="s_bg" src="snake_bg.mp3" loop></audio>
+    <audio id="s_eat" src="snake_eat.mp3"></audio>
+    <audio id="s_err" src="snake_error.mp3"></audio>
+    <audio id="s_die" src="snake_die.mp3"></audio>
 
     <script>
-        const missions = [
-            { words: ["I", "MUST", "STUDY"], fakes: ["doing", "speaks", "have you", "is it", "did", "was"] }
-        ];
-        let snake = [{x: 100, y: 100}, {x: 80, y: 100}, {x: 60, y: 100}];
-        let dir = {x: 0, y: 0}, nextDir = {x: 0, y: 0}, score = 0, lives = 5, mIdx = 0, wIdx = 0, gameActive = true, audioStarted = false;
-        const container = document.getElementById('game-container');
+        let snake = [{x: 100, y: 100}, {x: 80, y: 100}], dir = {x: 0, y: 0}, score = 0, audio = false;
+        const box = document.getElementById("game-box");
+        const mission = { words: ["AM"], fakes: ["DO", "HAVE", "IS", "ARE"] };
 
-        function spawnFoods() {
-            document.querySelectorAll('.food').forEach(f => f.remove());
-            const cur = missions[mIdx];
-            const opts = [cur.words[wIdx], ...cur.fakes].sort(() => Math.random() - 0.5);
-            opts.forEach(txt => {
-                const div = document.createElement('div');
-                div.className = 'food'; div.innerText = txt;
-                div.style.left = (Math.random() * (container.clientWidth - 100) + 50) + "px";
-                div.style.top = (Math.random() * (container.clientHeight - 100) + 50) + "px";
-                div.dataset.correct = (txt === cur.words[wIdx]);
-                container.appendChild(div);
+        function spawn() {
+            document.querySelectorAll(".food").forEach(f => f.remove());
+            [...mission.words, ...mission.fakes].sort(()=>Math.random()-0.5).forEach(txt => {
+                const f = document.createElement("div"); f.className = "food"; f.innerText = txt;
+                f.style.left = Math.random() * (window.innerWidth - 60) + "px";
+                f.style.top = Math.random() * (box.clientHeight - 40) + "px";
+                f.dataset.ok = mission.words.includes(txt);
+                box.appendChild(f);
             });
         }
-
-        function update() {
-            if (!gameActive || (dir.x === 0 && dir.y === 0)) return;
-            dir = nextDir;
+        function move(x, y) { if(!audio){document.getElementById("s_bg").play(); audio=true;} dir = {x, y}; }
+        
+        setInterval(() => {
+            if (dir.x === 0 && dir.y === 0) return;
             let head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-            if (head.x < 0) head.x = container.clientWidth - 20; else if (head.x >= container.clientWidth) head.x = 0;
-            if (head.y < 0) head.y = container.clientHeight - 20; else if (head.y >= container.clientHeight) head.y = 0;
-
+            if (head.x < 0) head.x = window.innerWidth - 20; else if (head.x >= window.innerWidth) head.x = 0;
+            if (head.y < 0) head.y = box.clientHeight - 20; else if (head.y >= box.clientHeight) head.y = 0;
+            
+            snake.unshift(head);
             let ate = false;
-            document.querySelectorAll('.food').forEach(f => {
-                const dist = Math.sqrt(Math.pow(head.x - parseInt(f.style.left), 2) + Math.pow(head.y - parseInt(f.style.top), 2));
-                if (dist < 35) {
-                    if (f.dataset.correct === "true") {
-                        document.getElementById('snd-eat').play();
-                        score += 150; wIdx++;
-                        if (wIdx >= missions[mIdx].words.length) { alert("¡NIVEL COMPLETADO!"); location.reload(); }
-                        spawnFoods();
-                    } else {
-                        lives--; if (lives <= 0) location.reload();
-                        spawnFoods();
+            document.querySelectorAll(".food").forEach(f => {
+                if (Math.abs(head.x - parseInt(f.style.left)) < 30 && Math.abs(head.y - parseInt(f.style.top)) < 30) {
+                    if (f.dataset.ok === "true") { 
+                        document.getElementById("s_eat").play(); score += 100; spawn(); 
+                    } else { 
+                        document.getElementById("s_err").play(); score = Math.max(0, score-50); 
                     }
                     ate = true;
                 }
             });
             if (!ate) snake.pop();
-            snake.unshift(head);
             draw();
-        }
+        }, 150);
 
         function draw() {
-            document.querySelectorAll('.snake-part').forEach(p => p.remove());
-            snake.forEach((p, i) => {
-                const div = document.createElement('div');
-                div.className = 'snake-part';
-                div.style.left = p.x + 'px'; div.style.top = p.y + 'px';
-                div.style.background = (i === 0) ? "#fff" : "#00ff41";
-                container.appendChild(div);
+            document.querySelectorAll(".snake").forEach(s => s.remove());
+            snake.forEach(p => {
+                const s = document.createElement("div"); s.className = "snake";
+                s.style.left = p.x + "px"; s.style.top = p.y + "px";
+                box.appendChild(s);
             });
-            document.getElementById('score').innerText = score;
-            document.getElementById('lives').innerText = lives;
-            document.getElementById('mission-text').innerText = missions[mIdx].words.map((w, i) => i < wIdx ? w : "___").join(" ");
+            document.getElementById("score").innerText = score;
         }
-
-        function changeDir(x, y) {
-            if(!audioStarted) { document.getElementById('fondo-music').play(); audioStarted = true; }
-            if (x !== 0 && dir.x === 0) nextDir = {x, y: 0};
-            if (y !== 0 && dir.y === 0) nextDir = {x: 0, y};
-        }
-        spawnFoods();
-        setInterval(update, 150);
+        spawn();
     </script>
 </body>
 </html>
