@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grammar Snake Arcade</title>
+    <title>Grammar Snake: Mission Hub</title>
     <style>
-        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; --green: #00ff41; --red: #ff3131; }
-        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; touch-action: none; }
+        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
         
-        #game-board { position: relative; width: 90vw; max-width: 400px; aspect-ratio: 1/1; background: #000; border: 3px solid var(--blue); box-shadow: 0 0 20px rgba(0,212,255,0.3); overflow: hidden; }
+        /* Contenedor del juego (Canvas) */
+        #gameCanvas { border: 3px solid var(--blue); background: #000; box-shadow: 0 0 20px rgba(0,212,255,0.3); width: 90vw; height: auto; aspect-ratio: 1/1; max-width: 400px; }
         
         .hud { width: 90%; max-width: 400px; display: flex; justify-content: space-around; padding: 10px; font-weight: bold; color: var(--blue); font-family: monospace; font-size: 1.1rem; }
-        #mission-control { width: 90%; max-width: 400px; text-align: center; color: var(--pink); font-size: 1.1rem; margin: 10px 0; min-height: 2.5em; text-shadow: 0 0 5px var(--pink); }
+        #sentence-box { width: 90%; max-width: 400px; text-align: center; color: var(--pink); font-size: 1.1rem; margin: 10px 0; min-height: 2.5em; text-shadow: 0 0 5px var(--pink); font-weight: bold; }
 
-        .controls { display: grid; grid-template-areas: ". up ." "left down right"; gap: 15px; margin-top: 20px; }
-        .btn-ctrl { width: 70px; height: 70px; background: rgba(0, 212, 255, 0.1); border: 2px solid var(--blue); color: var(--blue); border-radius: 50%; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; user-select: none; }
+        /* Controles táctiles optimizados */
+        .controls { display: grid; grid-template-areas: ". up ." "left down right"; gap: 12px; margin-top: 20px; }
+        .btn-ctrl { width: 70px; height: 70px; background: rgba(0, 212, 255, 0.1); border: 2px solid var(--blue); color: var(--blue); border-radius: 50%; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
         .btn-ctrl:active { background: var(--blue); color: #000; }
 
         .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
-        button#start-btn { background: linear-gradient(45deg, #00d4ff, #9d00ff); color: white; border: none; padding: 20px 50px; border-radius: 15px; font-size: 1.5rem; font-weight: bold; }
+        button#start-btn { background: linear-gradient(45deg, #00d4ff, #9d00ff); color: white; border: none; padding: 20px 50px; border-radius: 15px; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
         .hidden { display: none !important; }
-        
-        .snake-part { position: absolute; width: 20px; height: 20px; background: var(--pink); border-radius: 4px; box-shadow: 0 0 5px var(--pink); }
-        .food-item { position: absolute; color: #ccff00; font-weight: bold; font-family: monospace; font-size: 14px; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -33,51 +32,58 @@
     <audio id="snd-lose"><source src="lose.mp3" type="audio/mpeg"></audio>
 
     <div id="start-screen" class="overlay">
-        <h1 style="color:var(--blue); font-size: 2.5rem;">SNAKE MISSION</h1>
-        <button id="start-btn">START</button>
+        <h1 style="color:var(--blue); font-size: 2.5rem; margin:0;">SNAKE</h1>
+        <p style="color:var(--pink); letter-spacing: 3px;">GRAMMAR MISSION</p>
+        <button id="start-btn">INITIALIZE</button>
     </div>
 
     <div class="hud">
-        <div>SCORE: <span id="score-val">0</span></div>
-        <div>SHIELD: <span id="shield-val">5/5</span></div>
+        <div>SCORE: <span id="score">0</span></div>
+        <div>SHIELD: <span id="lives">5</span></div>
     </div>
 
-    <div id="mission-control">Initializing...</div>
-    
-    <div id="game-board"></div>
+    <div id="sentence-box">Waiting for connection...</div>
+    <canvas id="gameCanvas"></canvas>
 
     <div class="controls">
-        <div class="btn-ctrl" style="grid-area: up;" id="m-up">▲</div>
-        <div class="btn-ctrl" style="grid-area: left;" id="m-left">◀</div>
-        <div class="btn-ctrl" style="grid-area: down;" id="m-down">▼</div>
-        <div class="btn-ctrl" style="grid-area: right;" id="m-right">▶</div>
+        <div class="btn-ctrl" style="grid-area: up;" id="btn-up">▲</div>
+        <div class="btn-ctrl" style="grid-area: left;" id="btn-left">◀</div>
+        <div class="btn-ctrl" style="grid-area: down;" id="btn-down">▼</div>
+        <div class="btn-ctrl" style="grid-area: right;" id="btn-right">▶</div>
     </div>
 
     <script src="data.js"></script>
     <script src="game.js"></script>
 
     <script>
-        // Conectamos los botones táctiles con la lógica de game.js
-        const mobileKeys = {
-            'm-up': 'ArrowUp',
-            'm-down': 'ArrowDown',
-            'm-left': 'ArrowLeft',
-            'm-right': 'ArrowRight'
+        // Mapeo de botones táctiles para que game.js los entienda
+        const controls = {
+            'btn-up': 'ArrowUp',
+            'btn-down': 'ArrowDown',
+            'btn-left': 'ArrowLeft',
+            'btn-right': 'ArrowRight'
         };
 
-        Object.keys(mobileKeys).forEach(id => {
-            const btn = document.getElementById(id);
-            btn.addEventListener('touchstart', (e) => {
+        Object.keys(controls).forEach(id => {
+            document.getElementById(id).addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                window.dispatchEvent(new KeyboardEvent('keydown', { 'key': mobileKeys[id] }));
+                // Esto simula presionar las flechas del teclado
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: controls[id] }));
             });
         });
 
-        document.getElementById('start-btn').addEventListener('click', () => {
+        // Al presionar el botón de inicio
+        document.getElementById('start-btn').onclick = function() {
             document.getElementById('start-screen').classList.add('hidden');
-            if(typeof initGame === 'function') initGame(); 
-            // Nota: Asegúrate que en game.js tengas una función que inicie el loop
-        });
+            const bgMusic = document.getElementById('snd-bg');
+            bgMusic.volume = 0.7;
+            bgMusic.play();
+            
+            // Si tu game.js tiene una función de inicio, se llama aquí
+            if (typeof initGame === "function") {
+                initGame();
+            }
+        };
     </script>
 </body>
 </html>
