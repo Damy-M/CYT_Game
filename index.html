@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYT: Cybermodal Learning Hub</title>
+    <style>
+        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; }
+        body { 
+            background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            min-height: 100vh; margin: 0;
+        }
+        h1 { color: var(--blue); text-shadow: 0 0 15px var(--blue); margin-bottom: 40px; }
+        .menu { display: grid; gap: 20px; width: 90%; max-width: 400px; }
+        .card { 
+            background: #111; border: 2px solid var(--pink); padding: 25px; 
+            border-radius: 15px; text-decoration: none; color: white;
+            text-align: center; font-weight: bold; transition: 0.3s;
+        }
+        .card:active { transform: scale(0.95); background: var(--pink); color: #000; }
+    </style>
+</head>
+<body>
+    <h1>CYT: MISSION CONTROL</h1>
+    <div class="menu">
+        <a href="index_space.html" class="card">MISSION 01: ARCADE SPACE</a>
+        
+        <a href="Grammar%20Snake/index.html" class="card">MISSION 02: GRAMMAR SNAKE</a>
+    </div>
+</body>
+</html>
