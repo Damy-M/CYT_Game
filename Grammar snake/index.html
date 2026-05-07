@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grammar Snake Arcade</title>
+    <style>
+        :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; --green: #00ff41; --red: #ff3131; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100vw; touch-action: none; }
+        
+        /* Layout para móvil */
+        #main-layout { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 95%; height: 90%; }
+
+        #game-board { position: relative; width: 90vw; aspect-ratio: 1/1; max-width: 400px; background: #000; border: 3px solid var(--blue); box-shadow: 0 0 20px rgba(0,212,255,0.3); overflow: hidden; }
+        
+        .hud { width: 100%; display: flex; justify-content: space-around; padding: 5px; font-weight: bold; color: var(--blue); font-family: monospace; font-size: 1rem; }
+        #mission-control { width: 100%; text-align: center; color: var(--pink); font-size: 1rem; margin: 5px 0; min-height: 2em; font-weight: bold; }
+
+        /* Botones táctiles */
+        .controls { display: grid; grid-template-areas: ". up ." "left down right"; gap: 10px; margin-top: 10px; }
+        .ctrl-btn { width: 65px; height: 65px; background: rgba(0, 212, 255, 0.1); border: 2px solid var(--blue); color: var(--blue); border-radius: 50%; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; user-select: none; }
+        .ctrl-btn:active { background: var(--blue); color: #000; }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; }
+        #start-btn { background: linear-gradient(45deg, #00d4ff, #9d00ff); color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .hidden { display: none !important; }
+        
+        /* Estilos para los elementos del juego */
+        .snake-part { position: absolute; width: 20px; height: 20px; border-radius: 4px; z-index: 5; }
+        .food-item { position: absolute; font-weight: bold; font-family: monospace; z-index: 10; padding: 2px; }
+        .slot { margin: 0 5px; border-bottom: 2px solid #555; padding: 0 5px; }
+        .slot.done { color: var(--green); border-bottom-color: var(--green); }
+    </style>
+</head>
+<body>
+
+    <audio id="snd-bg" loop><source src="fondo.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-eat"><source src="jump.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-win"><source src="win.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-lose"><source src="lose.mp3" type="audio/mpeg"></audio>
+
+    <div id="start-screen" class="overlay">
+        <h1 style="color:var(--blue); font-size: 2rem;">GRAMMAR SNAKE</h1>
+        <button id="start-btn">INICIAR MISIÓN</button>
+    </div>
+
+    <div id="main-layout">
+        <div class="hud">
+            <div>PUNTOS: <span id="score-val">0</span></div>
+            <div>ESCUDO: <span id="shield-val">5/5</span></div>
+        </div>
+
+        <div id="mission-control">Cargando sistema...</div>
+        
+        <div id="game-board"></div>
+
+        <div class="controls">
+            <button class="ctrl-btn" style="grid-area: up;" id="m-up">▲</button>
+            <button class="ctrl-btn" style="grid-area: left;" id="m-left">◀</button>
+            <button class="ctrl-btn" style="grid-area: down;" id="m-down">▼</button>
+            <button class="ctrl-btn" style="grid-area: right;" id="m-right">▶</button>
+        </div>
+    </div>
+
+    <div id="game-over" class="overlay hidden">
+        <h2 id="end-status" style="color:var(--red);">MISIÓN FALLIDA</h2>
+        <div id="feedback-report" style="color:white; margin: 15px; font-size: 0.9rem;"></div>
+        <button onclick="location.reload()" style="background:var(--blue); border:none; padding:10px 20px; border-radius:5px;">REINTENTAR</button>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="game.js"></script>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        
+        startBtn.addEventListener('click', () => {
+            document.getElementById('start-screen').classList.add('hidden');
+            // Intentar activar música
+            const bgMusic = document.getElementById('snd-bg');
+            bgMusic.volume = 0.5;
+            bgMusic.play().catch(() => console.log("Esperando interacción para audio"));
+            
+            // Llamar a la función de inicio de tu game.js
+            if(window.initGame) window.initGame();
+        });
+
+        // Controles táctiles para simular las flechas del teclado en game.js
+        const mobileKeys = {
+            'm-up': 'ArrowUp',
+            'm-down': 'ArrowDown',
+            'm-left': 'ArrowLeft',
+            'm-right': 'ArrowRight'
+        };
+
+        Object.keys(mobileKeys).forEach(id => {
+            const btn = document.getElementById(id);
+            if(btn) {
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    window.dispatchEvent(new KeyboardEvent('keydown', { 'key': mobileKeys[id] }));
+                });
+            }
+        });
+    </script>
+</body>
+</html>
