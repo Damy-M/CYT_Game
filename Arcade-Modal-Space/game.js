@@ -5,14 +5,14 @@ const roundEl = document.getElementById("round-counter");
 const sentenceEl = document.getElementById("sentence-display");
 const sndEat = document.getElementById('snd-eat');
 const sndLose = document.getElementById('snd-lose');
+const music = document.getElementById('fondo-music');
 
 let score = 0, currentRound = 1, gameActive = true, invaders = [];
 let audioStarted = false;
 
 function startAudio() {
     if (!audioStarted) {
-        sndEat.volume = 0.5;
-        sndLose.volume = 0.5;
+        music.play().catch(() => {});
         audioStarted = true;
     }
 }
@@ -34,25 +34,23 @@ function spawnInvaders(options, answer) {
         const div = document.createElement('div');
         div.className = 'invader';
         div.innerText = opt;
-        div.style.top = "-50px";
-        div.style.left = (i * spacing + 10) + "px";
+        div.style.top = "-60px";
+        div.style.left = (i * spacing + 5) + "px";
         div.onclick = () => { startAudio(); checkAnswer(opt === answer, div); };
         area.appendChild(div);
-        invaders.push({ div, y: -50, speed: 0.8 + (currentRound * 0.15) });
+        invaders.push({ div, y: -60, speed: 1.0 + (currentRound * 0.12) });
     });
 }
 
 function checkAnswer(correct, div) {
     if (!gameActive) return;
-    // Limpiar feedbacks anteriores pegados
-    document.querySelectorAll('.fb-text').forEach(f => f.remove());
+    document.querySelectorAll('.fb-text').forEach(f => f.remove()); // LIMPIEZA TOTAL
 
     const fb = document.createElement('div');
     fb.className = 'fb-text';
-    fb.style.cssText = `position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-weight:bold; z-index:100; font-size:2rem;`;
-
+    
     if (correct) {
-        sndEat.play().catch(()=>{});
+        sndEat.currentTime = 0; sndEat.play().catch(()=>{});
         score += 100;
         fb.innerText = "EXCELLENT!";
         fb.style.color = "#00ff41";
@@ -60,9 +58,9 @@ function checkAnswer(correct, div) {
         gameActive = false; 
         setTimeout(() => { fb.remove(); gameActive = true; currentRound++; loadMission(); }, 1000);
     } else {
-        sndLose.play().catch(()=>{});
+        sndLose.currentTime = 0; sndLose.play().catch(()=>{});
         score = Math.max(0, score - 50);
-        fb.innerText = "WRONG!";
+        fb.innerText = "RETRY!";
         fb.style.color = "#ff3131";
         div.style.borderColor = "#ff3131";
         setTimeout(() => fb.remove(), 800);
@@ -86,5 +84,6 @@ function endGame(win) {
     location.reload();
 }
 
+window.addEventListener('touchstart', startAudio, {once: true});
 loadMission();
 setInterval(update, 20);
