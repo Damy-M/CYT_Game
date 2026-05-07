@@ -1,95 +1,85 @@
-// Grammar Snake Logic
-const board = document.getElementById('game-board');
-const missionEl = document.getElementById('mission-control');
-const scoreVal = document.getElementById('score-val');
-const shieldVal = document.getElementById('shield-val');
+const container = document.getElementById('game-container');
+const missionEl = document.getElementById('mission-text');
+const scoreEl = document.getElementById('score');
+const livesEl = document.getElementById('lives');
 
-// Configuración
-let snake = [{x: 160, y: 160}, {x: 140, y: 160}, {x: 120, y: 160}];
+let snake = [{x: 100, y: 100}, {x: 80, y: 100}, {x: 60, y: 100}];
 let dir = {x: 20, y: 0}, nextDir = {x: 20, y: 0};
-let active = true;
-let score = 0;
-let lives = 5;
-let currentStep = 0;
-let missionIndex = 0;
-let foods = [];
-const boxSize = 20;
+let score = 0, lives = 5, currentWordIdx = 0, missionIdx = 0;
+let foods = [], gameActive = true;
 
-const neonColors = ['#00d4ff', '#ff00ff', '#00ff41', '#ff3131'];
+const box = 20;
 
-function initMission() {
-    // Usamos snakeMissions de tu data.js
-    if (typeof snakeMissions !== 'undefined' && snakeMissions[missionIndex]) {
-        currentStep = 0;
+function initLevel() {
+    if (typeof snakeMissions !== 'undefined' && snakeMissions[missionIdx]) {
+        currentWordIdx = 0;
         spawnFoods();
         renderMission();
+    } else {
+        alert("¡FELICIDADES! COMPLETADO.");
+        location.reload();
     }
 }
 
 function spawnFoods() {
-    document.querySelectorAll('.food-item').forEach(f => f.remove());
+    document.querySelectorAll('.food').forEach(f => f.remove());
     foods = [];
-    
-    const mission = snakeMissions[missionIndex];
-    const correctWord = mission.words[currentStep];
-    const options = shuffle([correctWord, ...mission.fakes]);
+    const mission = snakeMissions[missionIdx];
+    const target = mission.words[currentWordIdx];
+    const options = [target, ...mission.fakes].sort(() => Math.random() - 0.5);
 
-    options.forEach(text => {
+    options.forEach(txt => {
         const food = {
-            x: Math.floor(Math.random() * (board.clientWidth / boxSize - 4) + 2) * boxSize,
-            y: Math.floor(Math.random() * (board.clientHeight / boxSize - 4) + 2) * boxSize,
-            text: text,
-            color: neonColors[Math.floor(Math.random() * neonColors.length)]
+            x: Math.floor(Math.random() * (container.clientWidth / box - 2) + 1) * box,
+            y: Math.floor(Math.random() * (container.clientHeight / box - 2) + 1) * box,
+            text: txt,
+            isCorrect: txt === target
         };
         foods.push(food);
         const div = document.createElement('div');
-        div.className = 'food-item';
-        div.innerText = food.text.toUpperCase();
+        div.className = 'food';
+        div.innerText = food.text;
         div.style.left = food.x + 'px';
         div.style.top = food.y + 'px';
-        div.style.color = food.color;
-        board.appendChild(div);
+        container.appendChild(div);
     });
 }
 
+function changeDir(x, y) {
+    if (x !== 0 && dir.x === 0) nextDir = {x, y: 0};
+    if (y !== 0 && dir.y === 0) nextDir = {x: 0, y};
+}
+
 function update() {
-    if (!active) return;
+    if (!gameActive) return;
     dir = nextDir;
     const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-    // Efecto Túnel
-    if (head.x < 0) head.x = Math.floor(board.clientWidth / 20) * 20 - 20;
-    if (head.x >= board.clientWidth) head.x = 0;
-    if (head.y < 0) head.y = Math.floor(board.clientHeight / 20) * 20 - 20;
-    if (head.y >= board.clientHeight) head.y = 0;
-
-    // Colisión con cuerpo
-    if (snake.some(p => p.x === head.x && p.y === head.y)) endGame("SISTEMA DAÑADO");
+    // Efecto túnel
+    if (head.x < 0) head.x = Math.floor(container.clientWidth/box)*box - box;
+    if (head.x >= container.clientWidth) head.x = 0;
+    if (head.y < 0) head.y = Math.floor(container.clientHeight/box)*box - box;
+    if (head.y >= container.clientHeight) head.y = 0;
 
     let ate = false;
     foods.forEach((f, i) => {
-        // Rango de colisión un poco más amplio para palabras largas
-        if (Math.abs(head.x - f.x) < 20 && Math.abs(head.y - f.y) < 20) {
-            if (f.text === snakeMissions[missionIndex].words[currentStep]) {
-                document.getElementById('snd-eat').play();
+        if (head.x === f.x && head.y === f.y) {
+            if (f.isCorrect) {
                 score += 150;
-                currentStep++;
-                ate = true;
-                if (currentStep >= snakeMissions[missionIndex].words.length) {
-                    missionIndex++;
-                    if (missionIndex >= snakeMissions.length) {
-                        victory();
-                    } else {
-                        initMission();
-                    }
+                currentWordIdx++;
+                if (currentWordIdx >= snakeMissions[missionIdx].words.length) {
+                    missionIdx++;
+                    initLevel();
                 } else {
                     spawnFoods();
                 }
             } else {
                 lives--;
-                if (lives <= 0) endGame("ESCUDOS AGOTADOS");
-                spawnFoods(); // Reposicionar tras error
+                score = Math.max(0, score - 50);
+                if (lives <= 0) { gameActive = false; alert("GAME OVER"); location.reload(); }
+                spawnFoods();
             }
+            ate = true;
         }
     });
 
@@ -100,52 +90,23 @@ function update() {
 
 function draw() {
     document.querySelectorAll('.snake-part').forEach(p => p.remove());
-    snake.forEach((p, i) => {
+    snake.forEach(p => {
         const div = document.createElement('div');
         div.className = 'snake-part';
         div.style.left = p.x + 'px';
         div.style.top = p.y + 'px';
-        div.style.color = i === 0 ? varProp('--blue') : varProp('--pink');
-        div.style.background = 'currentColor';
-        board.appendChild(div);
+        container.appendChild(div);
     });
-    scoreVal.innerText = score;
-    shieldVal.innerText = `${lives}/5`;
-    renderMission();
+    scoreEl.innerText = score;
+    livesEl.innerText = lives;
 }
 
 function renderMission() {
-    const mission = snakeMissions[missionIndex];
-    missionEl.innerHTML = mission.words.map((w, i) => 
-        `<span class="slot ${i < currentStep ? 'done' : ''}">${i < currentStep ? w : '____'}</span>`
-    ).join(' ');
+    const m = snakeMissions[missionIdx];
+    missionEl.innerHTML = m.words.map((w, i) => 
+        `<span class="word-box ${i < currentWordIdx ? 'found' : ''}">${i < currentWordIdx ? w : '____'}</span>`
+    ).join('');
 }
 
-function varProp(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
-
-function shuffle(array) { return array.sort(() => Math.random() - 0.5); }
-
-// Controles
-window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowUp' && dir.y === 0) nextDir = {x: 0, y: -20};
-    if (e.key === 'ArrowDown' && dir.y === 0) nextDir = {x: 0, y: 20};
-    if (e.key === 'ArrowLeft' && dir.x === 0) nextDir = {x: -20, y: 0};
-    if (e.key === 'ArrowRight' && dir.x === 0) nextDir = {x: 20, y: 0};
-});
-
-function endGame(msg) {
-    active = false;
-    document.getElementById('snd-lose').play();
-    alert(msg + "\nSCORE FINAL: " + score);
-    location.reload();
-}
-
-function victory() {
-    active = false;
-    document.getElementById('snd-win').play();
-    alert("¡MISIÓN COMPLETADA, AGENTE!");
-    location.reload();
-}
-
-initMission();
+initLevel();
 setInterval(update, 150);
