@@ -3,43 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grammar Snake: Safe Mission</title>
+    <title>Grammar Snake: Mission Protocol</title>
     <style>
         :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; --green: #00ff41; --red: #ff3131; --yellow: #ccff00; }
         body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; touch-action: none; }
         
-        canvas { border: 3px solid var(--blue); background: #000; box-shadow: 0 0 20px rgba(0,212,255,0.3); width: 90vw; height: auto; aspect-ratio: 1/1; }
+        canvas { border: 3px solid var(--blue); background: #000; box-shadow: 0 0 20px rgba(0,212,255,0.3); width: 90vw; height: auto; aspect-ratio: 1/1; max-width: 400px; }
         
-        .hud { width: 90%; display: flex; justify-content: space-around; padding: 10px; font-weight: bold; color: var(--blue); font-family: monospace; font-size: 1.1rem; }
-        #sentence-box { width: 90%; text-align: center; color: var(--pink); font-size: 1.1rem; margin: 5px 0; min-height: 2.5em; text-shadow: 0 0 5px var(--pink); }
+        .hud { width: 90%; max-width: 400px; display: flex; justify-content: space-around; padding: 10px; font-weight: bold; color: var(--blue); font-family: monospace; font-size: 1.1rem; }
+        #sentence-box { width: 90%; max-width: 400px; text-align: center; color: var(--pink); font-size: 1.1rem; margin: 10px 0; min-height: 2.5em; text-shadow: 0 0 5px var(--pink); font-weight: bold; }
 
-        /* Controles táctiles más grandes para celular */
-        .controls { display: grid; grid-template-areas: ". up ." "left down right"; gap: 10px; margin-top: 15px; }
-        .btn-ctrl { width: 75px; height: 75px; background: rgba(0, 212, 255, 0.1); border: 2px solid var(--blue); color: var(--blue); border-radius: 50%; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; user-select: none; }
+        .controls { display: grid; grid-template-areas: ". up ." "left down right"; gap: 12px; margin-top: 20px; }
+        .btn-ctrl { width: 70px; height: 70px; background: rgba(0, 212, 255, 0.1); border: 2px solid var(--blue); color: var(--blue); border-radius: 50%; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
         .btn-ctrl:active { background: var(--blue); color: #000; }
 
         .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; padding: 20px; }
-        button#start-btn { background: linear-gradient(45deg, #00d4ff, #9d00ff); color: white; border: none; padding: 20px 50px; border-radius: 12px; font-size: 1.5rem; font-weight: bold; }
+        button#start-btn { background: linear-gradient(45deg, #00d4ff, #9d00ff); color: white; border: none; padding: 20px 50px; border-radius: 15px; font-size: 1.5rem; font-weight: bold; box-shadow: 0 0 15px var(--blue); }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <audio id="snd-bg" loop><source src="../wall.mp3" type="audio/mpeg"></audio>
-    <audio id="snd-eat"><source src="../shot.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-bg" loop><source src="fondo.mp3" type="audio/mpeg"></audio>
+    <audio id="snd-eat"><source src="comer.mp3" type="audio/mpeg"></audio>
 
     <div id="start-screen" class="overlay">
         <h1 style="color:var(--blue); font-size: 2.5rem; margin:0;">SNAKE</h1>
-        <p style="color:var(--pink); letter-spacing: 3px;">SLOW & STEADY MISSION</p>
-        <button id="start-btn">START MISSION</button>
+        <p style="color:var(--pink); letter-spacing: 3px;">GRAMMAR MISSION</p>
+        <button id="start-btn">INITIALIZE</button>
     </div>
 
     <div class="hud">
         <div>SCORE: <span id="score">0</span></div>
-        <div>LIVES: <span id="lives">5</span></div>
+        <div>SHIELD: <span id="lives">5</span></div>
     </div>
 
-    <div id="sentence-box">Initializing systems...</div>
+    <div id="sentence-box">Waiting for connection...</div>
     <canvas id="gameCanvas"></canvas>
 
     <div class="controls">
@@ -50,14 +49,15 @@
     </div>
 
     <script>
+        // BASE DE DATOS DE ORACIONES
         const db = [
-            { s: "I ____ swim across the lake.", ans: "can" },
-            { s: "You ____ not enter this room.", ans: "must" },
-            { s: "We ____ study for the exam.", ans: "should" },
-            { s: "It ____ rain tomorrow.", ans: "might" },
-            { s: "____ I come in, please?", ans: "may" }
+            { s: "I ____ play the piano when I was five.", ans: "could" },
+            { s: "You ____ respect the traffic lights.", ans: "must" },
+            { s: "We ____ go to the beach if it's sunny.", ans: "might" },
+            { s: "____ I use your phone for a moment?", ans: "may" },
+            { s: "He ____ study more to pass the exam.", ans: "should" }
         ];
-        const modals = ["can", "must", "might", "should", "may", "would", "could"];
+        const modals = ["can", "must", "might", "should", "may", "would", "could", "shall"];
 
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
@@ -70,16 +70,16 @@
         let dir = {x: 0, y: 0}, nextDir = {x: 0, y: 0};
         let foods = [], gameActive = false;
 
-        // Tamaño fijo para evitar que se pierda en el borde
         canvas.width = 400; canvas.height = 400;
 
         function initGame() {
             document.getElementById("start-screen").classList.add("hidden");
-            document.getElementById("snd-bg").volume = 1.0; 
-            document.getElementById("snd-bg").play();
+            const music = document.getElementById("snd-bg");
+            music.volume = 0.8;
+            music.play();
             gameActive = true;
             resetLevel();
-            runGame();
+            runLoop();
         }
 
         function resetLevel() {
@@ -105,36 +105,31 @@
         }
 
         function changeDir(x, y) {
-            // Evita que la serpiente se muerda a sí misma girando 180 grados
             if ((x !== 0 && dir.x === 0) || (y !== 0 && dir.y === 0)) {
                 nextDir = {x, y};
             }
         }
 
-        function runGame() {
+        function runLoop() {
             if(!gameActive) return;
-            
-            // VELOCIDAD: 250ms es mucho más lento y permite pensar
             setTimeout(() => {
                 update();
                 draw();
-                runGame();
-            }, 250); 
+                runLoop();
+            }, 260); // VELOCIDAD LENTA (260ms)
         }
 
         function update() {
             if(nextDir.x === 0 && nextDir.y === 0) return;
             dir = nextDir;
-            
             let head = {x: snake[0].x + dir.x * box, y: snake[0].y + dir.y * box};
 
-            // EFECTO TELETRANSPORTE (No más choques con San Pedro)
+            // EFECTO TELETRANSPORTE (ATRAVESAR PAREDES)
             if (head.x < 0) head.x = canvas.width - box;
             if (head.x >= canvas.width) head.x = 0;
             if (head.y < 0) head.y = canvas.height - box;
             if (head.y >= canvas.height) head.y = 0;
 
-            // Colisión Comida
             let ate = false;
             foods.forEach((f, i) => {
                 if (head.x === f.x && head.y === f.y) {
@@ -144,7 +139,6 @@
                         resetLevel();
                     } else {
                         lives--;
-                        if(window.navigator.vibrate) window.navigator.vibrate(200);
                         if(lives <= 0) location.reload();
                     }
                     ate = true;
@@ -162,17 +156,16 @@
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Grid de fondo muy sutil
-            ctx.strokeStyle = "#111";
-            for(let i=0; i<canvas.width; i+=box) ctx.strokeRect(i, 0, box, canvas.height);
-
-            // Serpiente
+            // Dibujar Serpiente
             snake.forEach((part, i) => {
                 ctx.fillStyle = i === 0 ? "#00d4ff" : "#ff00ff";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = i === 0 ? "#00d4ff" : "#ff00ff";
                 ctx.fillRect(part.x, part.y, box-2, box-2);
+                ctx.shadowBlur = 0;
             });
 
-            // Opciones (Modales)
+            // Dibujar Opciones
             ctx.font = "bold 16px monospace";
             foods.forEach(f => {
                 ctx.fillStyle = "#ccff00";
