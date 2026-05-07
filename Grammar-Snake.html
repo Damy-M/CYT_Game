@@ -3,57 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
-    <title>SNAKE PROTOCOL v2.0 - PURE MODALS</title>
+    <title>SNAKE PROTOCOL v2.1</title>
     <style>
         :root { --neon-g: #00ff41; --neon-p: #ff00ff; --neon-b: #00d4ff; }
         body { margin: 0; background: #000; color: var(--neon-g); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
-        
-        /* HUD Superior */
-        .hud { display: flex; justify-content: space-around; padding: 10px; background: #050505; border-bottom: 2px solid var(--neon-p); box-shadow: 0 0 15px var(--neon-p); z-index: 100; }
-        #m-text { color: #fff; text-shadow: 0 0 8px var(--neon-b); font-weight: bold; font-size: 1.1rem; text-align: center; flex: 2; }
-
-        /* Área de Juego con Bordes Mortales */
-        #game-box { 
-            position: relative; 
-            width: 96vw; 
-            height: 52vh; 
-            margin: 5px auto;
-            background: #020202; 
-            border: 4px solid #333; 
-            box-shadow: inset 0 0 20px #000;
-            overflow: hidden;
-        }
-
-        /* Elementos del Juego */
-        .snake { position: absolute; width: 20px; height: 20px; border-radius: 3px; background: #fff; box-shadow: 0 0 12px var(--neon-g); z-index: 50; }
-        .food { 
-            position: absolute; padding: 10px; border: 2px solid var(--neon-p); 
-            background: rgba(0,0,0,0.9); color: #fff; font-size: 0.85rem; 
-            z-index: 10; box-shadow: 0 0 10px var(--neon-p); font-weight: bold;
-            transform: translate(-50%, -50%); /* Centrado para colisión precisa */
-        }
-
-        /* Controles Neón Laterales */
-        .ctrls { display: flex; justify-content: space-between; align-items: center; padding: 0 40px; height: 32vh; }
-        .btn-grid { display: grid; grid-template-areas: ". u ." "l . r" ". d ."; gap: 10px; }
-        .btn { 
-            width: 60px; height: 60px; border: 3px solid var(--neon-b); 
-            background: transparent; color: var(--neon-b); border-radius: 50%; 
-            font-weight: bold; font-size: 1.4rem; box-shadow: 0 0 12px var(--neon-b);
-        }
-        .btn:active { background: var(--neon-b); color: #000; }
-        .status-panel { text-align: right; border-right: 3px solid var(--neon-p); padding-right: 15px; }
+        .hud { display: flex; justify-content: space-around; padding: 10px; background: #050505; border-bottom: 2px solid var(--neon-p); box-shadow: 0 0 15px var(--neon-p); z-index: 100; height: 12vh; box-sizing: border-box; }
+        #m-text { color: #fff; text-shadow: 0 0 8px var(--neon-b); font-weight: bold; font-size: 1rem; text-align: center; flex: 2; display: flex; align-items: center; justify-content: center; }
+        #game-box { position: relative; width: 94vw; height: 48vh; margin: 5px auto; background: #020202; border: 4px solid #333; overflow: hidden; }
+        .snake { position: absolute; width: 18px; height: 18px; border-radius: 3px; background: #fff; box-shadow: 0 0 12px var(--neon-g); z-index: 50; }
+        .food { position: absolute; padding: 8px; border: 2px solid var(--neon-p); background: rgba(0,0,0,0.9); color: #fff; font-size: 0.8rem; z-index: 10; box-shadow: 0 0 10px var(--neon-p); font-weight: bold; transform: translate(-50%, -50%); }
+        .ctrls { display: flex; justify-content: space-between; align-items: center; padding: 0 40px; height: 35vh; }
+        .btn-grid { display: grid; grid-template-areas: ". u ." "l . r" ". d ."; gap: 5px; }
+        .btn { width: 55px; height: 55px; border: 3px solid var(--neon-b); background: transparent; color: var(--neon-b); border-radius: 50%; font-weight: bold; font-size: 1.2rem; box-shadow: 0 0 10px var(--neon-b); }
+        .status-panel { text-align: right; border-right: 3px solid var(--neon-p); padding-right: 15px; line-height: 1.2; }
     </style>
 </head>
 <body>
     <div class="hud">
         <div>SCORE: <span id="score">0</span></div>
-        <div id="m-text">SYSTEM INITIALIZING...</div>
+        <div id="m-text">TAP ARROW TO START</div>
         <div>HP: <span id="lives">7</span></div>
     </div>
-
     <div id="game-box"></div>
-
     <div class="ctrls">
         <div class="btn-grid">
             <button class="btn" style="grid-area:u" onclick="move(0,-20)">▲</button>
@@ -62,9 +33,9 @@
             <button class="btn" style="grid-area:d" onclick="move(0,20)">▼</button>
         </div>
         <div class="status-panel">
-            <p style="color:var(--neon-p); font-size: 0.8rem; margin:2px;">WALLS: LETHAL</p>
-            <p style="color:var(--neon-b); font-size: 0.8rem; margin:2px;">MODALS: PURE</p>
-            <p style="color:#fff; font-size: 0.7rem; margin:2px;">CYBER-GRAMMAR v2.0</p>
+            <p style="color:var(--neon-p); font-size: 0.7rem; margin:0;">WALLS: LETHAL</p>
+            <p style="color:var(--neon-b); font-size: 0.7rem; margin:0;">MODALS: PURE</p>
+            <p style="color:#fff; font-size: 0.6rem; margin:0;">FIX: ANTI-STUCK 2.1</p>
         </div>
     </div>
 
@@ -74,7 +45,6 @@
     <audio id="s_die" src="snake_die.mp3"></audio>
 
     <script>
-        // BASE DE DATOS: 10 MISIONES (MODALES PUROS)
         const pureMissions = [
             { w: "MUST", f: ["DO", "ARE", "AM"], s: "YOU ___ STOP AT THE RED LIGHT!" },
             { w: "CAN", f: ["IS", "WAS", "BEEN"], s: "I ___ RUN VERY FAST" },
@@ -88,42 +58,42 @@
             { w: "SHALL", f: ["COULD", "SHOULD", "MIGHT"], s: "___ WE START THE PROJECT?" }
         ];
 
-        let snake = [{x: 200, y: 100}, {x: 180, y: 100}, {x: 160, y: 100}];
-        let dir = {x: 0, y: 0};
+        let box = document.getElementById("game-box");
         let score = 0, lives = 7, rd = 0, audioStarted = false;
-        const box = document.getElementById("game-box");
+        let snake, dir, gameInterval;
+
+        function initGame() {
+            // Posicionar en el centro exacto para evitar choques al nacer
+            let startX = Math.floor(box.clientWidth / 40) * 20;
+            let startY = Math.floor(box.clientHeight / 40) * 20;
+            snake = [{x: startX, y: startY}, {x: startX - 20, y: startY}];
+            dir = {x: 0, y: 0};
+            draw();
+            spawn();
+        }
 
         function spawn() {
             document.querySelectorAll(".food").forEach(f => f.remove());
             const cur = pureMissions[rd];
             document.getElementById("m-text").innerText = cur.s;
             const opts = [cur.w, ...cur.f].sort(() => 0.5 - Math.random());
-            
             opts.forEach(txt => {
                 const f = document.createElement("div"); 
-                f.className = "food"; 
-                f.innerText = txt;
+                f.className = "food"; f.innerText = txt;
                 let x, y, dist;
                 do {
-                    x = Math.random() * (box.clientWidth - 120) + 60;
+                    x = Math.random() * (box.clientWidth - 100) + 50;
                     y = Math.random() * (box.clientHeight - 80) + 40;
-                    // Evitar que aparezca encima de la serpiente
                     dist = Math.sqrt(Math.pow(x - snake[0].x, 2) + Math.pow(y - snake[0].y, 2));
-                } while(dist < 150);
-                
-                f.style.left = x + "px"; 
-                f.style.top = y + "px";
+                } while(dist < 100);
+                f.style.left = x + "px"; f.style.top = y + "px";
                 f.dataset.ok = (txt === cur.w);
                 box.appendChild(f);
             });
         }
 
         function move(x, y) { 
-            if(!audioStarted){ 
-                document.getElementById("s_bg").play(); 
-                audioStarted = true; 
-            }
-            // Evitar giro de 180 grados sobre sí misma
+            if(!audioStarted){ document.getElementById("s_bg").play(); audioStarted = true; }
             if (x !== 0 && dir.x !== 0) return;
             if (y !== 0 && dir.y !== 0) return;
             dir = {x, y};
@@ -132,50 +102,39 @@
         function triggerDeath() {
             lives--;
             document.getElementById("s_die").play();
-            snake = [{x: 200, y: 100}, {x: 180, y: 100}, {x: 160, y: 100}];
-            dir = {x: 0, y: 0};
             document.getElementById("lives").innerText = lives;
             if (lives <= 0) {
-                alert("GAME OVER - NO MORE LIVES");
+                alert("GAME OVER");
                 location.reload();
+            } else {
+                initGame(); // Reinicia posición sin recargar todo
             }
         }
 
-        setInterval(() => {
+        function update() {
             if (dir.x === 0 && dir.y === 0) return;
-            
             let head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
             
-            // 1. COLISIÓN CON PAREDES (MORTAL)
-            if (head.x < 0 || head.x > box.clientWidth - 20 || head.y < 0 || head.y > box.clientHeight - 20) {
+            // Colisión Paredes
+            if (head.x < 0 || head.x >= box.clientWidth - 10 || head.y < 0 || head.y >= box.clientHeight - 10) {
                 triggerDeath(); return;
             }
 
-            // 2. COLISIÓN CON EL CUERPO
-            for(let i = 1; i < snake.length; i++) {
-                if(head.x === snake[i].x && head.y === snake[i].y) {
-                    triggerDeath(); return;
-                }
+            // Colisión Cuerpo
+            if (snake.some((p, i) => i !== 0 && p.x === head.x && p.y === head.y)) {
+                triggerDeath(); return;
             }
 
             snake.unshift(head);
             let ate = false;
-            
-            // 3. DETECCIÓN DE COLISIÓN MEJORADA (PIXEL A PIXEL)
             document.querySelectorAll(".food").forEach(f => {
                 const fx = parseInt(f.style.left);
                 const fy = parseInt(f.style.top);
-                
-                // Si la cabeza entra en el radio del cuadro de texto
-                // Aumentamos el margen de detección a 30px para que sea instantáneo
-                if (Math.abs(head.x - fx) < 35 && Math.abs(head.y - fy) < 35) {
+                if (Math.abs(head.x - fx) < 30 && Math.abs(head.y - fy) < 30) {
                     if (f.dataset.ok === "true") {
                         document.getElementById("s_eat").play();
                         score += 100; rd++;
-                        if(rd >= 10) { 
-                            alert("CYBER-VICTORY: MISSION COMPLETE!"); 
-                            location.reload(); 
-                        }
+                        if(rd >= 10) { alert("VICTORY!"); location.reload(); }
                         spawn();
                     } else {
                         document.getElementById("s_err").play();
@@ -184,28 +143,23 @@
                     ate = true;
                 }
             });
-
             if (!ate) snake.pop();
             draw();
             document.getElementById("score").innerText = score;
-        }, 110); // Velocidad ajustada para mejor control
+        }
 
         function draw() {
             document.querySelectorAll(".snake").forEach(s => s.remove());
             snake.forEach((p, i) => {
-                const s = document.createElement("div");
-                s.className = "snake";
-                s.style.left = p.x + "px";
-                s.style.top = p.y + "px";
-                if(i === 0) {
-                    s.style.background = "#fff"; // Cabeza blanca
-                    s.style.zIndex = "60";
-                }
+                const s = document.createElement("div"); s.className = "snake";
+                s.style.left = p.x + "px"; s.style.top = p.y + "px";
+                if(i === 0) s.style.background = "#fff";
                 box.appendChild(s);
             });
         }
 
-        spawn();
+        initGame();
+        setInterval(update, 130);
     </script>
 </body>
 </html>
