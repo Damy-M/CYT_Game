@@ -15,25 +15,19 @@ function initLevel() {
         spawnFoods();
         renderMission();
     } else {
-        showFeedback("MISSION ACCOMPLISHED!", "#00ff41");
-        setTimeout(() => location.reload(), 2000);
+        triggerFeedback("VICTORY! ALL MISSIONS CLEAR", "#00ff41");
+        gameActive = false;
     }
 }
 
-function showFeedback(text, color) {
+// FEEDBACK VISUAL
+function triggerFeedback(msg, color) {
     const fb = document.createElement('div');
-    fb.innerText = text;
-    fb.style.position = 'absolute';
-    fb.style.top = '50%';
-    fb.style.left = '50%';
-    fb.style.transform = 'translate(-50%, -50%)';
-    fb.style.color = color;
-    fb.style.fontSize = '2rem';
-    fb.style.fontWeight = 'bold';
-    fb.style.zIndex = '1000';
-    fb.style.textShadow = `0 0 10px ${color}`;
+    fb.innerText = msg;
+    fb.style.cssText = `position:absolute; top:40%; left:50%; transform:translate(-50%,-50%); 
+        color:${color}; font-weight:bold; font-size:1.5rem; text-shadow:0 0 10px ${color}; z-index:100;`;
     container.appendChild(fb);
-    setTimeout(() => fb.remove(), 1000);
+    setTimeout(() => fb.remove(), 1200);
 }
 
 function spawnFoods() {
@@ -54,8 +48,7 @@ function spawnFoods() {
         const div = document.createElement('div');
         div.className = 'food';
         div.innerText = food.text;
-        div.style.left = food.x + 'px';
-        div.style.top = food.y + 'px';
+        div.style.left = food.x + 'px'; div.style.top = food.y + 'px';
         container.appendChild(div);
     });
 }
@@ -70,24 +63,24 @@ function update() {
     dir = nextDir;
     const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-    // MUERTE POR PARED (Regla estricta)
+    // --- REGLA: MUERTE POR PARED ---
     if (head.x < 0 || head.x >= container.clientWidth || head.y < 0 || head.y >= container.clientHeight) {
-        endGame("CRASHED INTO BORDER!");
+        handleDeath("WALL COLLISION!");
         return;
     }
 
-    // Muerte por morderse a sí misma
+    // --- REGLA: MUERTE POR AUTO-CHOQUE ---
     if (snake.some(p => p.x === head.x && p.y === head.y)) {
-        endGame("SELF-DESTRUCTION!");
+        handleDeath("SELF COLLISION!");
         return;
     }
 
     let ate = false;
-    foods.forEach((f, i) => {
+    foods.forEach((f) => {
         if (head.x === f.x && head.y === f.y) {
             if (f.isCorrect) {
-                document.getElementById('snd-eat').play();
-                showFeedback("CORRECT!", "#00d4ff");
+                try { document.getElementById('snd-eat').play(); } catch(e){}
+                triggerFeedback("CORRECT +150", "#00d4ff");
                 score += 150;
                 currentWordIdx++;
                 if (currentWordIdx >= snakeMissions[missionIdx].words.length) {
@@ -97,10 +90,11 @@ function update() {
                     spawnFoods();
                 }
             } else {
-                document.getElementById('snd-lose').play();
-                showFeedback("WRONG WORD!", "#ff3131");
+                try { document.getElementById('snd-lose').play(); } catch(e){}
+                triggerFeedback("WRONG WORD -50", "#ff3131");
                 lives--;
-                if (lives <= 0) endGame("SYSTEM FAILURE");
+                score = Math.max(0, score - 50);
+                if (lives <= 0) handleDeath("LIVES EXHAUSTED");
                 spawnFoods();
             }
             ate = true;
@@ -112,13 +106,18 @@ function update() {
     draw();
 }
 
+function handleDeath(reason) {
+    gameActive = false;
+    triggerFeedback(reason, "#ff3131");
+    setTimeout(() => location.reload(), 2000);
+}
+
 function draw() {
     document.querySelectorAll('.snake-part').forEach(p => p.remove());
     snake.forEach(p => {
         const div = document.createElement('div');
         div.className = 'snake-part';
-        div.style.left = p.x + 'px';
-        div.style.top = p.y + 'px';
+        div.style.left = p.x + 'px'; div.style.top = p.y + 'px';
         container.appendChild(div);
     });
     scoreEl.innerText = score;
@@ -126,11 +125,11 @@ function draw() {
     renderMission();
 }
 
-function endGame(msg) {
-    gameActive = false;
-    document.getElementById('snd-lose').play();
-    showFeedback(msg, "#ff3131");
-    setTimeout(() => location.reload(), 2000);
+function renderMission() {
+    const m = snakeMissions[missionIdx];
+    missionEl.innerHTML = m.words.map((w, i) => 
+        `<span class="word-box ${i < currentWordIdx ? 'found' : ''}">${i < currentWordIdx ? w : '____'}</span>`
+    ).join('');
 }
 
 initLevel();
