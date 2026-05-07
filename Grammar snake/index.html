@@ -7,29 +7,16 @@
     <style>
         :root { --blue: #00d4ff; --pink: #ff00ff; --bg: #050508; }
         * { box-sizing: border-box; touch-action: none; }
-        body { 
-            margin: 0; background: var(--bg); color: white; font-family: sans-serif; 
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
-        }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .hud { display: flex; justify-content: space-around; padding: 10px; border-bottom: 2px solid var(--pink); background: #000; }
         #mission-text { padding: 15px; text-align: center; font-size: 1.1rem; background: rgba(255,0,255,0.05); min-height: 50px; }
         .word-box { border-bottom: 2px solid var(--blue); margin: 0 4px; padding: 0 5px; min-width: 40px; display: inline-block; }
         .word-box.found { color: var(--blue); border-bottom: none; }
-        
-        #game-container { flex-grow: 1; position: relative; background: #000; margin: 5px; border: 1px solid #222; overflow: hidden; }
+        #game-container { flex-grow: 1; position: relative; background: #000; margin: 5px; border: 2px solid #222; overflow: hidden; }
         .snake-part { position: absolute; width: 18px; height: 18px; background: var(--blue); border-radius: 4px; box-shadow: 0 0 5px var(--blue); }
-        .food { 
-            position: absolute; padding: 5px 10px; background: rgba(0,0,0,0.8); 
-            border: 1px solid var(--pink); color: white; border-radius: 5px; font-size: 0.8rem; font-weight: bold;
-        }
-
-        /* Controles para el pulgar */
+        .food { position: absolute; padding: 5px 10px; background: rgba(0,0,0,0.8); border: 1px solid var(--pink); color: white; border-radius: 5px; font-size: 0.8rem; font-weight: bold; }
         .controls { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 10px; padding: 15px; justify-content: center; background: #0a0a0c; }
-        .btn { 
-            width: 60px; height: 60px; background: rgba(255,0,255,0.1); border: 2px solid var(--pink); 
-            color: white; border-radius: 50%; font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
-        }
-        .btn:active { background: var(--pink); color: black; }
+        .btn { width: 60px; height: 60px; background: rgba(255,0,255,0.1); border: 2px solid var(--pink); color: white; border-radius: 50%; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; }
         .up { grid-area: up; } .left { grid-area: left; } .right { grid-area: right; } .down { grid-area: down; }
         .back-btn { position: fixed; top: 70px; right: 10px; font-size: 0.7rem; color: var(--blue); text-decoration: none; border: 1px solid var(--blue); padding: 4px; }
     </style>
@@ -50,6 +37,9 @@
     </div>
 
     <a href="../index.html" class="back-btn">MENU</a>
+
+    <audio id="snd-eat" src="eat.mp3"></audio>
+    <audio id="snd-lose" src="lose.mp3"></audio>
 
     <script src="data.js"></script>
     <script src="game.js"></script>
